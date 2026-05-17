@@ -15,10 +15,14 @@ export class ApiError extends Error {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const hasBody = init?.body != null;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      // Só envia Content-Type quando há body — Fastify 5 rejeita request
+      // sem body se Content-Type: application/json estiver setado.
+      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
       ...init?.headers,
     },
   });

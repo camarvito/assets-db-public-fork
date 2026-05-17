@@ -1,6 +1,15 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyError, FastifyInstance } from 'fastify';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
+
+function isFastifyError(error: unknown): error is FastifyError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    typeof (error as { statusCode: unknown }).statusCode === 'number'
+  );
+}
 
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error, req, reply) => {
@@ -22,6 +31,16 @@ export function registerErrorHandler(app: FastifyInstance): void {
         reply.status(404).send({ error: 'not_found' });
         return;
       }
+    }
+
+    // FastifyErrors carregam statusCode próprio (ex: 400 para body vazio,
+    // 404 para rota inexistente). Respeitar antes de cair em 500.
+    if (isFastifyError(error) && error.statusCode && error.statusCode < 500) {
+      reply.status(error.statusCode).send({
+        error: error.code ?? 'bad_request',
+        message: error.message,
+      });
+      return;
     }
 
     req.log.error({ err: error }, 'unhandled error');

@@ -84,7 +84,7 @@ export default function CrisPage() {
                     onClick={() => router.push(`/cris/${cri.id}`)}
                   >
                     <TableCell className="font-mono text-sm">{cri.codigo}</TableCell>
-                    <TableCell>{cri.emissor}</TableCell>
+                    <TableCell>{cri.emissor ?? '—'}</TableCell>
                     <TableCell>
                       {formatRemuneracao({
                         indexador: cri.indexador,

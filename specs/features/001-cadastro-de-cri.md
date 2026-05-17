@@ -1,9 +1,9 @@
 # Feature 001 — Cadastro de CRI
 
-**Status:** Active
+**Status:** Closed
 **Aberta em:** 2026-05-17
 **Aprovada em:** 2026-05-17
-**Fechada em:** —
+**Fechada em:** 2026-05-17
 **Modificada por:** —
 
 ## Objetivo
@@ -89,9 +89,9 @@ model Ativo {
   id              String       @id @default(cuid())
   tipo            TipoAtivo
   codigo          String       @unique
-  emissor         String
+  emissor         String?      // opcional
   instituicao     Instituicao? // nullable para retrocompat — ver BACKLOG
-  quantidade      Int?         // opcional: nem sempre conhecida no cadastro inicial
+  quantidade     Int?          // opcional: nem sempre conhecida no cadastro inicial
   precoAquisicao  Decimal      @db.Decimal(18, 4) @map("preco_aquisicao")
   dataAquisicao   DateTime     @db.Date           @map("data_aquisicao")
   observacoes     String?      @db.Text
@@ -252,7 +252,7 @@ Mesmo componente em ambos os modos. Campos:
 | Campo | Componente | Validação |
 |---|---|---|
 | Código | Input texto | obrigatório, 1–50 chars |
-| Emissor | Input texto | obrigatório, 1–200 chars |
+| Emissor | Input texto | **opcional**, ≤ 200 chars |
 | **Instituição** | Select (enum `Instituicao`) | obrigatório |
 | **Remuneração** | Select único (4 presets) | obrigatório — ver abaixo |
 | Taxa | Input numérico | obrigatório (semântica varia conforme remuneração) |
@@ -298,6 +298,7 @@ Regras-chave:
 - `dataVencimento > dataAquisicao`.
 - `valorNominal`, `precoAquisicao` estritamente positivos.
 - `quantidade` estritamente positiva **quando preenchida** (opcional).
+- `emissor` opcional (vazio aceito; serializa como `null`).
 - `instituicao` obrigatória (enum).
 - `taxa ≥ 0` (limite superior depende do `tipoTaxa`; sem teto rígido, mas avisar no UI se `> 200`).
 - Consistência indexador × tipoTaxa (ver tabela acima).
@@ -316,28 +317,60 @@ Script idempotente: se o `codigo` já existir, pula. Roda via `pnpm --filter api
 
 ## Critérios de aceitação
 
-- [ ] `pnpm db:up` sobe Postgres; `pnpm --filter api prisma migrate dev` aplica migration sem erro.
-- [ ] `pnpm --filter api db:seed` popula 3 CRIs idempotentemente.
-- [ ] `GET /cris` em base vazia retorna `[]`; com seed retorna 3 itens ordenados por `criadoEm DESC`.
-- [ ] `POST /cris` com body válido cria `Ativo` + `Cri` atomicamente e retorna `201`.
-- [ ] `POST /cris` com body inválido retorna `400` com lista de issues por campo (inclui violação de consistência indexador×tipoTaxa).
-- [ ] `POST /cris` com `codigo` duplicado retorna `409`.
-- [ ] `GET /cris/:id` retorna o registro completo; `404` se id inexistente.
-- [ ] `PUT /cris/:id` atualiza atomicamente e devolve o objeto novo.
-- [ ] `DELETE /cris/:id` retorna `204` e remove `Ativo` + `Cri` por cascade.
-- [ ] Telas funcionam: criar, listar, ver detalhe, editar, deletar com confirmação.
-- [ ] Select "Remuneração" muda o label do input de taxa dinamicamente.
-- [ ] Lista exibe coluna "Remuneração" no formato derivado correto para cada uma das 3 combinações.
-- [ ] Datas em `dd/MM/yyyy`; valores monetários em `R$ 1.234,56`.
-- [ ] CORS permite chamadas de `http://localhost:3000` em dev.
-- [ ] Campo Instituição salva e edita corretamente; API rejeita criação sem instituição (Zod).
-- [ ] Quantidade pode ser deixada em branco no formulário; lista exibe `—` na coluna e em "Investido total" para registros sem quantidade.
-- [ ] DatePicker aceita digitação direta em `dd/mm/yyyy` e `dd-mm-yyyy` e mantém o calendário funcional via ícone.
+- [x] `pnpm db:up` sobe Postgres; `pnpm --filter api prisma migrate dev` aplica migration sem erro.
+- [x] `pnpm --filter api db:seed` popula 3 CRIs idempotentemente.
+- [x] `GET /cris` em base vazia retorna `[]`; com seed retorna 3 itens ordenados por `criadoEm DESC`.
+- [x] `POST /cris` com body válido cria `Ativo` + `Cri` atomicamente e retorna `201`.
+- [x] `POST /cris` com body inválido retorna `400` com lista de issues por campo (inclui violação de consistência indexador×tipoTaxa).
+- [x] `POST /cris` com `codigo` duplicado retorna `409`.
+- [x] `GET /cris/:id` retorna o registro completo; `404` se id inexistente.
+- [x] `PUT /cris/:id` atualiza atomicamente e devolve o objeto novo.
+- [x] `DELETE /cris/:id` retorna `204` e remove `Ativo` + `Cri` por cascade.
+- [x] Telas funcionam: criar, listar, ver detalhe, editar, deletar com confirmação.
+- [x] Select "Remuneração" muda o label do input de taxa dinamicamente.
+- [x] Lista exibe coluna "Remuneração" no formato derivado correto para cada uma das 3 combinações.
+- [x] Datas em `dd/MM/yyyy`; valores monetários em `R$ 1.234,56`.
+- [x] CORS permite chamadas de `http://localhost:3000` em dev.
+- [x] Campo Instituição salva e edita corretamente; API rejeita criação sem instituição (Zod).
+- [x] Quantidade pode ser deixada em branco no formulário; lista exibe `—` na coluna e em "Investido total" para registros sem quantidade.
+- [x] DatePicker aceita digitação direta em `dd/mm/yyyy` e `dd-mm-yyyy` e mantém o calendário funcional via ícone.
 
 ## Validação (preencher no smoke test final)
 
-_(preencher na Etapa 5)_
+Fluxo completo exercitado em 2026-05-17 pelo usuário:
+
+- CRUD completo via UI (criar, listar, ver detalhe, editar, deletar).
+- API exercitada implicitamente pelo cliente web em todos os endpoints (`GET /cris`, `GET /cris/:id`, `POST`, `PUT`, `DELETE`).
+- Validações Zod cruzadas (data vencimento × aquisição, indexador × tipoTaxa, código duplicado 409).
+- Seed dos 3 CRIs cobrindo os 3 formatos de remuneração.
+- DatePicker com input por teclado (`dd/mm/yyyy`, `dd-mm-yyyy`) e calendário.
+- Campos opcionais (`quantidade`, `emissor`, `observacoes`) salvam em branco e renderizam `—` ou são escondidos na UI.
+
+### Ajustes feitos durante a Active
+
+Mudanças incorporadas após a aprovação inicial da spec, conforme regra "spec viva":
+
+- Adição do campo `instituicao` (enum, obrigatório no Zod, nullable no banco para retrocompat).
+- `quantidade` virou opcional.
+- `emissor` virou opcional.
+- DatePicker ganhou input por teclado nos formatos `dd/mm/yyyy` e `dd-mm-yyyy`.
+
+### Bugs corrigidos durante o smoke test
+
+- DatePicker parseava ano parcial (`"10/05/2"` virava `0002`) — corrigido com guard de 10 caracteres + range de ano 1900–2200 + suspensão do sync externo enquanto focused.
+- Cliente HTTP enviava `Content-Type: application/json` em DELETE sem body, causando 400 do Fastify 5 que o error handler convertia em 500 — corrigido em duas frentes (cliente condicional, error handler respeitando statusCode de FastifyError).
+- Select de Instituição mostrava "XP" pré-selecionado em CRIs legados sem instituição, sugerindo seleção inexistente — corrigido para usar `undefined` (mostra placeholder).
 
 ## Pendências geradas
 
-_(preencher conforme aparecerem; ao fechar a spec, mover para `BACKLOG.md` ou abrir spec própria)_
+Movidas para [`BACKLOG.md`](../../BACKLOG.md):
+
+- Avaliar edição inline na página de detalhe (`/cris/[id]`) como alternativa à rota separada `/cris/[id]/editar`.
+- Tornar `Ativo.instituicao` NOT NULL quando todos os registros existentes estiverem preenchidos.
+- `Cri.valorNominal` hoje é apenas informação contratual; vira essencial quando a feature de eventos de pagamento for escrita.
+
+Tópicos que não viraram BACKLOG porque já são features próprias futuras (não pendências menores):
+
+- Próxima feature natural: **eventos de pagamento** (juros, amortizações, bônus) — gera cronograma derivado dos campos cadastrados.
+- Outros tipos de ativo (LCI, LCA, CRA, FII, ações, debêntures) — cada um vira spec própria seguindo a modelagem CTI ([ADR 002](../decisions/002-modelagem-multi-tipo-de-ativos.md)).
+- Endpoint genérico `/ativos` com filtros cross-tipo — feature separada quando o segundo tipo entrar.

@@ -96,7 +96,7 @@ const isoDateString = z
 
 const criInputBase = z.object({
   codigo: z.string().min(1, 'Obrigatório').max(50, 'Máximo 50 caracteres'),
-  emissor: z.string().min(1, 'Obrigatório').max(200, 'Máximo 200 caracteres'),
+  emissor: z.string().max(200, 'Máximo 200 caracteres').nullable().optional(),
   instituicao: InstituicaoSchema,
   quantidade: z
     .number()

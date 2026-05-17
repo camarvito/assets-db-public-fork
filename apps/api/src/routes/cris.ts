@@ -55,7 +55,7 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
       data: {
         tipo: 'CRI',
         codigo: data.codigo,
-        emissor: data.emissor,
+        emissor: data.emissor ?? null,
         instituicao: data.instituicao,
         quantidade: data.quantidade ?? null,
         precoAquisicao: data.precoAquisicao,
@@ -92,7 +92,7 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
       where: { id },
       data: {
         codigo: data.codigo,
-        emissor: data.emissor,
+        emissor: data.emissor ?? null,
         instituicao: data.instituicao,
         quantidade: data.quantidade ?? null,
         precoAquisicao: data.precoAquisicao,

@@ -63,7 +63,7 @@ const EMPTY_DEFAULTS: Partial<CriInput> = {
 function toDefaults(initial: CriResponse): Partial<CriInput> {
   return {
     codigo: initial.codigo,
-    emissor: initial.emissor,
+    emissor: initial.emissor ?? '',
     instituicao: initial.instituicao ?? undefined,
     quantidade: initial.quantidade,
     precoAquisicao: initial.precoAquisicao,
@@ -102,9 +102,10 @@ export function CriForm({ mode }: CriFormProps) {
   );
 
   async function onSubmit(values: CriInput) {
-    // Normalizar decimais antes de enviar.
+    // Normalizar decimais e converter strings vazias em null antes de enviar.
     const payload: CriInput = {
       ...values,
+      emissor: values.emissor?.trim() ? values.emissor : null,
       precoAquisicao: normalizeDecimal(values.precoAquisicao),
       valorNominal: normalizeDecimal(values.valorNominal),
       taxa: normalizeDecimal(values.taxa),
@@ -160,9 +161,13 @@ export function CriForm({ mode }: CriFormProps) {
             name="emissor"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Emissor</FormLabel>
+                <FormLabel>Emissor (opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Securitizadora Alpha SA" {...field} />
+                  <Input
+                    placeholder="Securitizadora Alpha SA"
+                    {...field}
+                    value={field.value ?? ''}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
