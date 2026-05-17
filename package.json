@@ -1,0 +1,16 @@
+{
+  "name": "assets-db",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Controle de ativos financeiros com visualização de eventos (pagamentos, bônus, amortizações).",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:psql": "docker compose exec postgres psql -U assets -d assets_db"
+  }
+}
