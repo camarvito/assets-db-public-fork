@@ -36,6 +36,11 @@ enum Instituicao {
   VEST
 }
 
+enum TipoEvento {
+  JUROS
+  AMORTIZACAO
+}
+
 model Ativo {
   id             String       @id @default(cuid())
   tipo           TipoAtivo
@@ -50,9 +55,28 @@ model Ativo {
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt      @map("atualizado_em")
 
-  cri Cri?
+  cri     Cri?
+  eventos Evento[]
 
   @@map("ativos")
+}
+
+model Evento {
+  id      String     @id @default(cuid())
+  ativoId String     @map("ativo_id")
+  ativo   Ativo      @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+
+  tipo        TipoEvento
+  data        DateTime   @db.Date
+  valor       Decimal    @db.Decimal(18, 4)
+  observacoes String?    @db.Text
+
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt      @map("atualizado_em")
+
+  @@index([ativoId])
+  @@index([data])
+  @@map("eventos")
 }
 
 model Cri {

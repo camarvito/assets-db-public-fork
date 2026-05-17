@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { env } from './env.js';
 import { registerErrorHandler } from './lib/error-handler.js';
 import { criRoutes } from './routes/cris.js';
+import { eventoRoutes } from './routes/eventos.js';
 
 export async function buildServer() {
   const app = Fastify({
@@ -21,6 +22,7 @@ export async function buildServer() {
   app.get('/health', async () => ({ status: 'ok' }));
 
   await app.register(criRoutes, { prefix: '/cris' });
+  await app.register(eventoRoutes);
 
   return app;
 }

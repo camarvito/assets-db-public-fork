@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  isoDateString,
+  nonNegativeDecimalString,
+  positiveDecimalString,
+} from './_validators';
 
 // =====================================================
 // Enums
@@ -62,33 +67,6 @@ export const REMUNERACAO_PRESETS = [
 }>;
 
 export type RemuneracaoPresetKey = (typeof REMUNERACAO_PRESETS)[number]['key'];
-
-// =====================================================
-// Helpers de validação de tipos primitivos
-// =====================================================
-
-// Decimal aceito como string "1234.56" (evita perda de precisão no JSON).
-const decimalRegex = /^\d+(\.\d+)?$/;
-
-const decimalString = z
-  .string()
-  .regex(decimalRegex, 'Deve ser um número decimal (ex: "1234.56")');
-
-const positiveDecimalString = decimalString.refine(
-  (v) => Number.parseFloat(v) > 0,
-  'Deve ser maior que zero',
-);
-
-const nonNegativeDecimalString = decimalString.refine(
-  (v) => Number.parseFloat(v) >= 0,
-  'Deve ser maior ou igual a zero',
-);
-
-// Date no formato ISO YYYY-MM-DD (sem hora).
-const isoDateString = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (formato esperado: YYYY-MM-DD)')
-  .refine((v) => !Number.isNaN(new Date(v + 'T00:00:00Z').getTime()), 'Data inválida');
 
 // =====================================================
 // Schemas — Input (POST/PUT body)
