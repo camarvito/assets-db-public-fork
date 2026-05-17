@@ -1,0 +1,57 @@
+// Modelagem multi-tipo de ativos (CTI). Ver ADR 002.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoAtivo {
+  CRI
+}
+
+enum Indexador {
+  PREFIXADO
+  CDI
+  IPCA
+}
+
+enum TipoTaxa {
+  PRE
+  POS_PERCENTUAL
+  POS_SPREAD
+}
+
+model Ativo {
+  id             String    @id @default(cuid())
+  tipo           TipoAtivo
+  codigo         String    @unique
+  emissor        String
+  quantidade     Int
+  precoAquisicao Decimal   @db.Decimal(18, 4) @map("preco_aquisicao")
+  dataAquisicao  DateTime  @db.Date           @map("data_aquisicao")
+  observacoes    String?   @db.Text
+
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt      @map("atualizado_em")
+
+  cri Cri?
+
+  @@map("ativos")
+}
+
+model Cri {
+  ativoId String @id @map("ativo_id")
+  ativo   Ativo  @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+
+  valorNominal   Decimal   @db.Decimal(18, 4) @map("valor_nominal")
+  dataVencimento DateTime  @db.Date            @map("data_vencimento")
+  indexador      Indexador
+  tipoTaxa       TipoTaxa                      @map("tipo_taxa")
+  taxa           Decimal   @db.Decimal(8, 4)
+
+  @@map("cris")
+}

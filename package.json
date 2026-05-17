@@ -11,6 +11,11 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
-    "db:psql": "docker compose exec postgres psql -U assets -d assets_db"
+    "db:psql": "docker compose exec postgres psql -U assets -d assets_db",
+    "db:seed": "pnpm --filter @assets-db/api db:seed",
+    "db:studio": "pnpm --filter @assets-db/api db:studio",
+    "db:migrate": "pnpm --filter @assets-db/api exec prisma migrate dev",
+    "api:dev": "pnpm --filter @assets-db/api dev",
+    "web:dev": "pnpm --filter @assets-db/web dev"
   }
 }

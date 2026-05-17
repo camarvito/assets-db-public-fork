@@ -2,6 +2,7 @@
 
 **Status:** Draft <!-- Draft | Active | Closed | Superseded -->
 **Aberta em:** AAAA-MM-DD
+**Aprovada em:** —  <!-- preencher quando passar de Draft para Active -->
 **Fechada em:** —
 **Modificada por:** —  <!-- preencher só se for editada após Closed, com links [[NNN]] -->
 
