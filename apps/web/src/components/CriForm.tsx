@@ -42,10 +42,11 @@ interface CriFormProps {
 }
 
 // Defaults para o formulário em modo create.
-const EMPTY_DEFAULTS: CriInput = {
+// `instituicao` deixada undefined para que o Select mostre placeholder e force
+// escolha consciente (Zod marca como obrigatório).
+const EMPTY_DEFAULTS: Partial<CriInput> = {
   codigo: '',
   emissor: '',
-  instituicao: 'XP',
   quantidade: null,
   precoAquisicao: '',
   dataAquisicao: '',
@@ -57,13 +58,13 @@ const EMPTY_DEFAULTS: CriInput = {
   taxa: '',
 };
 
-// Para edição de registros legados (sem `instituicao`), seleciona XP como default
-// — o usuário ajusta antes de salvar.
-function toDefaults(initial: CriResponse): CriInput {
+// Para registros legados sem `instituicao`, deixa undefined — o Select fica
+// vazio e o usuário precisa escolher antes de salvar.
+function toDefaults(initial: CriResponse): Partial<CriInput> {
   return {
     codigo: initial.codigo,
     emissor: initial.emissor,
-    instituicao: initial.instituicao ?? 'XP',
+    instituicao: initial.instituicao ?? undefined,
     quantidade: initial.quantidade,
     precoAquisicao: initial.precoAquisicao,
     dataAquisicao: initial.dataAquisicao,

@@ -13,16 +13,10 @@ export type Indexador = z.infer<typeof IndexadorSchema>;
 export const TipoTaxaSchema = z.enum(['PRE', 'POS_PERCENTUAL', 'POS_SPREAD']);
 export type TipoTaxa = z.infer<typeof TipoTaxaSchema>;
 
-export const InstituicaoSchema = z.enum([
-  'INTER',
-  'XP',
-  'NUBANK',
-  'GCB',
-  'CLEAR',
-  'SOFISA',
-  'BMG',
-  'VEST',
-]);
+export const InstituicaoSchema = z.enum(
+  ['INTER', 'XP', 'NUBANK', 'GCB', 'CLEAR', 'SOFISA', 'BMG', 'VEST'],
+  { errorMap: () => ({ message: 'Selecione uma instituição' }) },
+);
 export type Instituicao = z.infer<typeof InstituicaoSchema>;
 
 // =====================================================
