@@ -18,8 +18,9 @@ interface DatePickerProps {
   id?: string;
 }
 
-// Formatos aceitos no input por teclado.
 const DISPLAY_FORMATS = ['dd/MM/yyyy', 'dd-MM-yyyy'];
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2200;
 
 function isoToDate(iso: string): Date | undefined {
   if (!iso) return undefined;
@@ -31,10 +32,17 @@ function dateToIso(d: Date): string {
   return format(d, 'yyyy-MM-dd');
 }
 
+// Aceita apenas strings com 10 caracteres (formato completo) e ano dentro de
+// um range razoável. date-fns é permissivo com ano parcial ("2" vira 0002);
+// essa guard evita parses indesejados enquanto o usuário ainda digita.
 function tryParseDisplay(input: string): Date | undefined {
+  if (input.length !== 10) return undefined;
   for (const fmt of DISPLAY_FORMATS) {
     const parsed = parse(input, fmt, new Date());
-    if (isValid(parsed)) return parsed;
+    if (!isValid(parsed)) continue;
+    const year = parsed.getFullYear();
+    if (year < MIN_YEAR || year > MAX_YEAR) continue;
+    return parsed;
   }
   return undefined;
 }
@@ -53,12 +61,13 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => displayValue(value));
+  const [focused, setFocused] = useState(false);
 
-  // Re-sincroniza o texto quando `value` muda externamente (ex: reset do form,
-  // ou seleção via calendário com Popover já aberto).
+  // Sincroniza com `value` externo apenas quando o input NÃO está focado.
+  // Senão sobrescreveria o texto que o usuário está digitando ainda parcial.
   useEffect(() => {
-    setText(displayValue(value));
-  }, [value]);
+    if (!focused) setText(displayValue(value));
+  }, [value, focused]);
 
   const selected = isoToDate(value);
 
@@ -75,13 +84,14 @@ export function DatePicker({
     if (parsed) {
       onChange(dateToIso(parsed));
     }
-    // Input parcial sem parse válido → mantém value anterior; o text local
-    // segue o que o usuário digitou.
+    // Input parcial sem parse válido → não chama onChange; o `value` no form
+    // permanece como estava. Texto local segue a digitação.
   }
 
   function handleBlur() {
-    // Ao sair do input, ressincroniza texto com a forma canônica.
-    // Se o usuário digitou algo inválido, restaura o último value.
+    setFocused(false);
+    // Ressincroniza com a forma canônica do value. Se o usuário deixou um
+    // parcial inválido, o texto volta para o último value válido (ou vazio).
     setText(displayValue(value));
   }
 
@@ -94,6 +104,7 @@ export function DatePicker({
         placeholder={placeholder ?? 'dd/mm/aaaa'}
         value={text}
         onChange={handleTextChange}
+        onFocus={() => setFocused(true)}
         onBlur={handleBlur}
         disabled={disabled}
         className="pr-10"
