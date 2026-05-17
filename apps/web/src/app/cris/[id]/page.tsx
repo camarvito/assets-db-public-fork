@@ -8,6 +8,7 @@ import {
   formatDateBR,
   formatRemuneracao,
   INSTITUICAO_LABELS,
+  PERIODICIDADE_JUROS_LABELS,
 } from '@assets-db/shared';
 import { useCri } from '@/hooks/use-cris';
 import { Button } from '@/components/ui/button';
@@ -64,9 +65,10 @@ export default function CriDetalhePage({
 
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-mono text-3xl font-bold tracking-tight">{cri.codigo}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{cri.nome}</h1>
+          <p className="mt-1 font-mono text-sm text-muted-foreground">{cri.codigo}</p>
           {cri.emissor && (
-            <p className="mt-1 text-muted-foreground">{cri.emissor}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{cri.emissor}</p>
           )}
         </div>
         <div className="flex gap-2">
@@ -100,7 +102,7 @@ export default function CriDetalhePage({
             />
             <Field
               label="Valor nominal"
-              value={formatCurrencyBRL(cri.valorNominal)}
+              value={cri.valorNominal ? formatCurrencyBRL(cri.valorNominal) : '—'}
             />
             <Field
               label="Quantidade"
@@ -121,6 +123,14 @@ export default function CriDetalhePage({
             <Field
               label="Data de vencimento"
               value={formatDateBR(cri.dataVencimento)}
+            />
+            <Field
+              label="Periodicidade de juros"
+              value={
+                cri.periodicidadeJuros
+                  ? PERIODICIDADE_JUROS_LABELS[cri.periodicidadeJuros]
+                  : '—'
+              }
             />
           </dl>
 

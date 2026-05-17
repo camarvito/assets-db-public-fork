@@ -41,10 +41,18 @@ enum TipoEvento {
   AMORTIZACAO
 }
 
+enum PeriodicidadeJuros {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  BULLET
+}
+
 model Ativo {
   id             String       @id @default(cuid())
   tipo           TipoAtivo
   codigo         String       @unique
+  nome           String
   emissor        String?
   instituicao    Instituicao?
   quantidade     Int?
@@ -83,11 +91,12 @@ model Cri {
   ativoId String @id @map("ativo_id")
   ativo   Ativo  @relation(fields: [ativoId], references: [id], onDelete: Cascade)
 
-  valorNominal   Decimal   @db.Decimal(18, 4) @map("valor_nominal")
-  dataVencimento DateTime  @db.Date            @map("data_vencimento")
-  indexador      Indexador
-  tipoTaxa       TipoTaxa                      @map("tipo_taxa")
-  taxa           Decimal   @db.Decimal(8, 4)
+  valorNominal       Decimal?            @db.Decimal(18, 4) @map("valor_nominal")
+  dataVencimento     DateTime            @db.Date            @map("data_vencimento")
+  indexador          Indexador
+  tipoTaxa           TipoTaxa                                @map("tipo_taxa")
+  taxa               Decimal             @db.Decimal(8, 4)
+  periodicidadeJuros PeriodicidadeJuros?                     @map("periodicidade_juros")
 
   @@map("cris")
 }

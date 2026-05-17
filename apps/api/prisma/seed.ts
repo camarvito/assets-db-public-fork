@@ -12,6 +12,7 @@ const seeds: Array<{
   {
     codigo: 'CRI23A001',
     ativo: {
+      nome: 'CRI Alpha',
       emissor: 'Securitizadora Alpha SA',
       instituicao: 'XP',
       quantidade: 5,
@@ -25,11 +26,13 @@ const seeds: Array<{
       indexador: 'PREFIXADO',
       tipoTaxa: 'PRE',
       taxa: '12.0000',
+      periodicidadeJuros: 'SEMESTRAL',
     },
   },
   {
     codigo: 'CRI24B001',
     ativo: {
+      nome: 'CRI Beta',
       emissor: 'Securitizadora Beta SA',
       instituicao: 'INTER',
       quantidade: 10,
@@ -43,11 +46,13 @@ const seeds: Array<{
       indexador: 'CDI',
       tipoTaxa: 'POS_SPREAD',
       taxa: '1.4500',
+      periodicidadeJuros: 'TRIMESTRAL',
     },
   },
   {
     codigo: 'CRI22C001',
     ativo: {
+      nome: 'CRI Gamma',
       emissor: 'Securitizadora Gamma SA',
       instituicao: 'BMG',
       quantidade: 3,
@@ -61,6 +66,7 @@ const seeds: Array<{
       indexador: 'IPCA',
       tipoTaxa: 'POS_SPREAD',
       taxa: '6.5000',
+      periodicidadeJuros: 'BULLET',
     },
   },
 ];

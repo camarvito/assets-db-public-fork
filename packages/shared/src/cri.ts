@@ -24,6 +24,12 @@ export const InstituicaoSchema = z.enum(
 );
 export type Instituicao = z.infer<typeof InstituicaoSchema>;
 
+export const PeriodicidadeJurosSchema = z.enum(
+  ['MENSAL', 'TRIMESTRAL', 'SEMESTRAL', 'BULLET'],
+  { errorMap: () => ({ message: 'Selecione uma periodicidade' }) },
+);
+export type PeriodicidadeJuros = z.infer<typeof PeriodicidadeJurosSchema>;
+
 // =====================================================
 // Labels para UI / mensagens
 // =====================================================
@@ -51,6 +57,13 @@ export const INSTITUICAO_LABELS: Record<Instituicao, string> = {
   VEST: 'Vest',
 };
 
+export const PERIODICIDADE_JUROS_LABELS: Record<PeriodicidadeJuros, string> = {
+  MENSAL: 'Mensal',
+  TRIMESTRAL: 'Trimestral',
+  SEMESTRAL: 'Semestral',
+  BULLET: 'Bullet (só no vencimento)',
+};
+
 // Presets exibidos no select "Remuneração" do formulário (ver spec 001).
 // Cada preset mapeia para uma combinação (indexador, tipoTaxa).
 export const REMUNERACAO_PRESETS = [
@@ -74,6 +87,7 @@ export type RemuneracaoPresetKey = (typeof REMUNERACAO_PRESETS)[number]['key'];
 
 const criInputBase = z.object({
   codigo: z.string().min(1, 'Obrigatório').max(50, 'Máximo 50 caracteres'),
+  nome: z.string().min(1, 'Obrigatório').max(200, 'Máximo 200 caracteres'),
   emissor: z.string().max(200, 'Máximo 200 caracteres').nullable().optional(),
   instituicao: InstituicaoSchema,
   quantidade: z
@@ -85,11 +99,12 @@ const criInputBase = z.object({
   precoAquisicao: positiveDecimalString,
   dataAquisicao: isoDateString,
   observacoes: z.string().max(1000, 'Máximo 1000 caracteres').nullable().optional(),
-  valorNominal: positiveDecimalString,
+  valorNominal: positiveDecimalString.nullable().optional(),
   dataVencimento: isoDateString,
   indexador: IndexadorSchema,
   tipoTaxa: TipoTaxaSchema,
   taxa: nonNegativeDecimalString,
+  periodicidadeJuros: PeriodicidadeJurosSchema.nullable().optional(),
 });
 
 // Validações cruzadas:

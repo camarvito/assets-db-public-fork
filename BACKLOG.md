@@ -8,4 +8,5 @@ Formato: `- [AAAA-MM-DD] descrição curta — contexto opcional`
 
 - [2026-05-17] Avaliar edição inline na página de detalhe (`/cris/[id]`) como alternativa à rota separada `/cris/[id]/editar` — revisitar quando o uso revelar fricção das duas páginas.
 - [2026-05-17] Tornar `Ativo.instituicao` NOT NULL quando todos os registros existentes estiverem preenchidos. Hoje é nullable para preservar histórico anterior à introdução do campo.
-- [2026-05-17] `Cri.valorNominal` hoje é informação contratual sem uso em cálculo. Vira essencial quando a feature de eventos de pagamento for escrita (juros = taxa × VN × quantidade) — confirmar que está sendo preenchido nos cadastros.
+- [2026-05-17] `Cri.valorNominal` agora é opcional (spec 003). Vira essencial quando a feature de eventos derivados/projeção for escrita — sem ele não dá pra calcular juros (taxa × VN × quantidade).
+- [2026-05-17] Select de Periodicidade de juros no form não permite voltar para "não definida" após selecionar — Radix Select não aceita `value=""`. Solução requer opção sentinela "Não definida". Baixa prioridade.

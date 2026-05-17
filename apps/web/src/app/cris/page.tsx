@@ -61,7 +61,7 @@ export default function CrisPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
+                <TableHead>Nome</TableHead>
                 <TableHead>Emissor</TableHead>
                 <TableHead>Remuneração</TableHead>
                 <TableHead>Vencimento</TableHead>
@@ -83,7 +83,12 @@ export default function CrisPage() {
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => router.push(`/cris/${cri.id}`)}
                   >
-                    <TableCell className="font-mono text-sm">{cri.codigo}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{cri.nome}</div>
+                      <div className="font-mono text-xs text-muted-foreground">
+                        {cri.codigo}
+                      </div>
+                    </TableCell>
                     <TableCell>{cri.emissor ?? '—'}</TableCell>
                     <TableCell>
                       {formatRemuneracao({

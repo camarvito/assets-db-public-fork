@@ -55,6 +55,7 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
       data: {
         tipo: 'CRI',
         codigo: data.codigo,
+        nome: data.nome,
         emissor: data.emissor ?? null,
         instituicao: data.instituicao,
         quantidade: data.quantidade ?? null,
@@ -63,11 +64,12 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
         observacoes: data.observacoes ?? null,
         cri: {
           create: {
-            valorNominal: data.valorNominal,
+            valorNominal: data.valorNominal ?? null,
             dataVencimento: isoToDate(data.dataVencimento),
             indexador: data.indexador,
             tipoTaxa: data.tipoTaxa,
             taxa: data.taxa,
+            periodicidadeJuros: data.periodicidadeJuros ?? null,
           },
         },
       },
@@ -92,6 +94,7 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
       where: { id },
       data: {
         codigo: data.codigo,
+        nome: data.nome,
         emissor: data.emissor ?? null,
         instituicao: data.instituicao,
         quantidade: data.quantidade ?? null,
@@ -100,11 +103,12 @@ export const criRoutes: FastifyPluginAsync = async (app) => {
         observacoes: data.observacoes ?? null,
         cri: {
           update: {
-            valorNominal: data.valorNominal,
+            valorNominal: data.valorNominal ?? null,
             dataVencimento: isoToDate(data.dataVencimento),
             indexador: data.indexador,
             tipoTaxa: data.tipoTaxa,
             taxa: data.taxa,
+            periodicidadeJuros: data.periodicidadeJuros ?? null,
           },
         },
       },

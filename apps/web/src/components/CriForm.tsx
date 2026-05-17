@@ -9,6 +9,8 @@ import {
   CriInputSchema,
   INSTITUICAO_LABELS,
   InstituicaoSchema,
+  PERIODICIDADE_JUROS_LABELS,
+  PeriodicidadeJurosSchema,
   REMUNERACAO_PRESETS,
   type CriInput,
   type CriResponse,
@@ -46,16 +48,18 @@ interface CriFormProps {
 // escolha consciente (Zod marca como obrigatório).
 const EMPTY_DEFAULTS: Partial<CriInput> = {
   codigo: '',
+  nome: '',
   emissor: '',
-  quantidade: null,
+  quantidade: 1,
   precoAquisicao: '',
   dataAquisicao: '',
   observacoes: '',
-  valorNominal: '1000',
+  valorNominal: '',
   dataVencimento: '',
   indexador: 'PREFIXADO',
   tipoTaxa: 'PRE',
   taxa: '',
+  periodicidadeJuros: undefined,
 };
 
 // Para registros legados sem `instituicao`, deixa undefined — o Select fica
@@ -63,17 +67,19 @@ const EMPTY_DEFAULTS: Partial<CriInput> = {
 function toDefaults(initial: CriResponse): Partial<CriInput> {
   return {
     codigo: initial.codigo,
+    nome: initial.nome,
     emissor: initial.emissor ?? '',
     instituicao: initial.instituicao ?? undefined,
     quantidade: initial.quantidade,
     precoAquisicao: initial.precoAquisicao,
     dataAquisicao: initial.dataAquisicao,
     observacoes: initial.observacoes ?? '',
-    valorNominal: initial.valorNominal,
+    valorNominal: initial.valorNominal ?? '',
     dataVencimento: initial.dataVencimento,
     indexador: initial.indexador,
     tipoTaxa: initial.tipoTaxa,
     taxa: initial.taxa,
+    periodicidadeJuros: initial.periodicidadeJuros ?? undefined,
   };
 }
 
@@ -107,7 +113,9 @@ export function CriForm({ mode }: CriFormProps) {
       ...values,
       emissor: values.emissor?.trim() ? values.emissor : null,
       precoAquisicao: normalizeDecimal(values.precoAquisicao),
-      valorNominal: normalizeDecimal(values.valorNominal),
+      valorNominal: values.valorNominal?.trim()
+        ? normalizeDecimal(values.valorNominal)
+        : null,
       taxa: normalizeDecimal(values.taxa),
       observacoes: values.observacoes?.trim() ? values.observacoes : null,
     };
@@ -142,6 +150,20 @@ export function CriForm({ mode }: CriFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="nome"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input placeholder="CRI MRV" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="codigo"
@@ -256,13 +278,14 @@ export function CriForm({ mode }: CriFormProps) {
             name="valorNominal"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor nominal (R$)</FormLabel>
+                <FormLabel>Valor nominal (R$) (opcional)</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     inputMode="decimal"
                     placeholder="1000,00"
                     {...field}
+                    value={field.value ?? ''}
                   />
                 </FormControl>
                 <FormMessage />
@@ -334,6 +357,34 @@ export function CriForm({ mode }: CriFormProps) {
               <FormItem className="flex flex-col">
                 <FormLabel>Data de vencimento</FormLabel>
                 <DatePicker value={field.value} onChange={field.onChange} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="periodicidadeJuros"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Periodicidade de juros (opcional)</FormLabel>
+                <Select
+                  value={field.value ?? undefined}
+                  onValueChange={field.onChange}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PeriodicidadeJurosSchema.options.map((key) => (
+                      <SelectItem key={key} value={key}>
+                        {PERIODICIDADE_JUROS_LABELS[key]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

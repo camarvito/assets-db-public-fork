@@ -4,7 +4,7 @@
 **Aberta em:** 2026-05-17
 **Aprovada em:** 2026-05-17
 **Fechada em:** 2026-05-17
-**Modificada por:** —
+**Modificada por:** [[003-ajustes-cri]]
 
 ## Objetivo
 
