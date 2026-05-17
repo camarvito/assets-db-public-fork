@@ -6,4 +6,5 @@ Formato: `- [AAAA-MM-DD] descrição curta — contexto opcional`
 
 ## Itens
 
-_(vazio por enquanto)_
+- [2026-05-17] Avaliar edição inline na página de detalhe (`/cris/[id]`) como alternativa à rota separada `/cris/[id]/editar` — revisitar quando o uso revelar fricção das duas páginas.
+- [2026-05-17] Tornar `Ativo.instituicao` NOT NULL quando todos os registros existentes estiverem preenchidos. Hoje é nullable para preservar histórico anterior à introdução do campo.

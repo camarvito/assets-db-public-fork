@@ -13,6 +13,18 @@ export type Indexador = z.infer<typeof IndexadorSchema>;
 export const TipoTaxaSchema = z.enum(['PRE', 'POS_PERCENTUAL', 'POS_SPREAD']);
 export type TipoTaxa = z.infer<typeof TipoTaxaSchema>;
 
+export const InstituicaoSchema = z.enum([
+  'INTER',
+  'XP',
+  'NUBANK',
+  'GCB',
+  'CLEAR',
+  'SOFISA',
+  'BMG',
+  'VEST',
+]);
+export type Instituicao = z.infer<typeof InstituicaoSchema>;
+
 // =====================================================
 // Labels para UI / mensagens
 // =====================================================
@@ -27,6 +39,17 @@ export const TIPO_TAXA_LABELS: Record<TipoTaxa, string> = {
   PRE: 'Prefixado',
   POS_PERCENTUAL: 'Pós-fixado (% do indexador)',
   POS_SPREAD: 'Pós-fixado (indexador + spread)',
+};
+
+export const INSTITUICAO_LABELS: Record<Instituicao, string> = {
+  INTER: 'Inter',
+  XP: 'XP',
+  NUBANK: 'Nubank',
+  GCB: 'GCB',
+  CLEAR: 'Clear',
+  SOFISA: 'Sofisa',
+  BMG: 'BMG',
+  VEST: 'Vest',
 };
 
 // Presets exibidos no select "Remuneração" do formulário (ver spec 001).
@@ -80,7 +103,13 @@ const isoDateString = z
 const criInputBase = z.object({
   codigo: z.string().min(1, 'Obrigatório').max(50, 'Máximo 50 caracteres'),
   emissor: z.string().min(1, 'Obrigatório').max(200, 'Máximo 200 caracteres'),
-  quantidade: z.number().int('Deve ser inteiro').positive('Deve ser maior que zero'),
+  instituicao: InstituicaoSchema,
+  quantidade: z
+    .number()
+    .int('Deve ser inteiro')
+    .positive('Deve ser maior que zero')
+    .nullable()
+    .optional(),
   precoAquisicao: positiveDecimalString,
   dataAquisicao: isoDateString,
   observacoes: z.string().max(1000, 'Máximo 1000 caracteres').nullable().optional(),
@@ -131,6 +160,8 @@ export type CriInput = z.infer<typeof CriInputSchema>;
 
 export const CriResponseSchema = criInputBase.extend({
   id: z.string(),
+  // Pode vir null em registros anteriores à introdução do campo.
+  instituicao: InstituicaoSchema.nullable(),
   criadoEm: z.string(), // ISO 8601 datetime
   atualizadoEm: z.string(), // ISO 8601 datetime
 });

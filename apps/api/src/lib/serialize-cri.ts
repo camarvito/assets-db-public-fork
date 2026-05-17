@@ -14,6 +14,7 @@ export function serializeCri(ativo: AtivoComCri): CriResponse {
     id: ativo.id,
     codigo: ativo.codigo,
     emissor: ativo.emissor,
+    instituicao: ativo.instituicao,
     quantidade: ativo.quantidade,
     precoAquisicao: ativo.precoAquisicao.toString(),
     dataAquisicao: formatDateISO(ativo.dataAquisicao),

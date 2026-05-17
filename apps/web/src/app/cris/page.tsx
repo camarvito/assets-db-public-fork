@@ -71,9 +71,12 @@ export default function CrisPage() {
             </TableHeader>
             <TableBody>
               {cris.map((cri) => {
-                const investidoTotal = (
-                  cri.quantidade * Number.parseFloat(cri.precoAquisicao)
-                ).toString();
+                const investidoTotal =
+                  cri.quantidade != null
+                    ? (
+                        cri.quantidade * Number.parseFloat(cri.precoAquisicao)
+                      ).toString()
+                    : null;
                 return (
                   <TableRow
                     key={cri.id}
@@ -90,9 +93,11 @@ export default function CrisPage() {
                       })}
                     </TableCell>
                     <TableCell>{formatDateBR(cri.dataVencimento)}</TableCell>
-                    <TableCell className="text-right">{cri.quantidade}</TableCell>
                     <TableCell className="text-right">
-                      {formatCurrencyBRL(investidoTotal)}
+                      {cri.quantidade ?? '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {investidoTotal ? formatCurrencyBRL(investidoTotal) : '—'}
                     </TableCell>
                   </TableRow>
                 );

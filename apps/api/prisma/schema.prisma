@@ -25,15 +25,27 @@ enum TipoTaxa {
   POS_SPREAD
 }
 
+enum Instituicao {
+  INTER
+  XP
+  NUBANK
+  GCB
+  CLEAR
+  SOFISA
+  BMG
+  VEST
+}
+
 model Ativo {
-  id             String    @id @default(cuid())
+  id             String       @id @default(cuid())
   tipo           TipoAtivo
-  codigo         String    @unique
+  codigo         String       @unique
   emissor        String
-  quantidade     Int
-  precoAquisicao Decimal   @db.Decimal(18, 4) @map("preco_aquisicao")
-  dataAquisicao  DateTime  @db.Date           @map("data_aquisicao")
-  observacoes    String?   @db.Text
+  instituicao    Instituicao?
+  quantidade     Int?
+  precoAquisicao Decimal      @db.Decimal(18, 4) @map("preco_aquisicao")
+  dataAquisicao  DateTime     @db.Date           @map("data_aquisicao")
+  observacoes    String?      @db.Text
 
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt      @map("atualizado_em")

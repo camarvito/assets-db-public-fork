@@ -13,6 +13,7 @@ const seeds: Array<{
     codigo: 'CRI23A001',
     ativo: {
       emissor: 'Securitizadora Alpha SA',
+      instituicao: 'XP',
       quantidade: 5,
       precoAquisicao: '990.0000',
       dataAquisicao: new Date('2023-04-10T00:00:00Z'),
@@ -30,6 +31,7 @@ const seeds: Array<{
     codigo: 'CRI24B001',
     ativo: {
       emissor: 'Securitizadora Beta SA',
+      instituicao: 'INTER',
       quantidade: 10,
       precoAquisicao: '985.5000',
       dataAquisicao: new Date('2024-09-20T00:00:00Z'),
@@ -47,6 +49,7 @@ const seeds: Array<{
     codigo: 'CRI22C001',
     ativo: {
       emissor: 'Securitizadora Gamma SA',
+      instituicao: 'BMG',
       quantidade: 3,
       precoAquisicao: '1010.0000',
       dataAquisicao: new Date('2022-06-15T00:00:00Z'),

@@ -74,18 +74,30 @@ enum TipoTaxa {
   POS_SPREAD       // indexador + spread (ex: CDI + 1,45%)
 }
 
-model Ativo {
-  id              String     @id @default(cuid())
-  tipo            TipoAtivo
-  codigo          String     @unique
-  emissor         String
-  quantidade      Int
-  precoAquisicao  Decimal    @db.Decimal(18, 4) @map("preco_aquisicao")
-  dataAquisicao   DateTime   @db.Date           @map("data_aquisicao")
-  observacoes     String?    @db.Text
+enum Instituicao {
+  INTER
+  XP
+  NUBANK
+  GCB
+  CLEAR
+  SOFISA
+  BMG
+  VEST
+}
 
-  criadoEm        DateTime   @default(now()) @map("criado_em")
-  atualizadoEm    DateTime   @updatedAt      @map("atualizado_em")
+model Ativo {
+  id              String       @id @default(cuid())
+  tipo            TipoAtivo
+  codigo          String       @unique
+  emissor         String
+  instituicao     Instituicao? // nullable para retrocompat — ver BACKLOG
+  quantidade      Int?         // opcional: nem sempre conhecida no cadastro inicial
+  precoAquisicao  Decimal      @db.Decimal(18, 4) @map("preco_aquisicao")
+  dataAquisicao   DateTime     @db.Date           @map("data_aquisicao")
+  observacoes     String?      @db.Text
+
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoEm    DateTime     @updatedAt      @map("atualizado_em")
 
   cri             Cri?
 
@@ -114,6 +126,8 @@ model Cri {
 - **Datas**: `@db.Date` (sem hora).
 - **Enums**: nativos no Postgres via Prisma.
 - **Cascade**: deletar `Ativo` apaga automaticamente a linha de `Cri` ligada.
+- **`instituicao`**: enum nativo. Nullable no banco para preservar registros anteriores à introdução do campo; **obrigatório** no schema Zod (API rejeita criação/atualização sem). BACKLOG inclui tornar NOT NULL no futuro.
+- **`quantidade`**: opcional. Quando não preenchido, lista exibe `—` na coluna e em "Investido total".
 
 ### Regras de consistência indexador × tipoTaxa
 
@@ -153,6 +167,7 @@ Lista todos os CRIs com seus dados completos (JOIN entre `Ativo` e `Cri`).
     "id": "clx...",
     "codigo": "CRI23A001",
     "emissor": "Securitizadora X SA",
+    "instituicao": "XP",
     "quantidade": 5,
     "precoAquisicao": "987.5000",
     "dataAquisicao": "2024-03-15",
@@ -183,6 +198,7 @@ Cria um CRI. Executa em **transação Prisma**: insere `Ativo` (com `tipo=CRI`) 
 {
   "codigo": "CRI23A001",
   "emissor": "Securitizadora X SA",
+  "instituicao": "XP",
   "quantidade": 5,
   "precoAquisicao": "987.5",
   "dataAquisicao": "2024-03-15",
@@ -194,6 +210,9 @@ Cria um CRI. Executa em **transação Prisma**: insere `Ativo` (com `tipo=CRI`) 
   "taxa": "6.5"
 }
 ```
+
+`instituicao` é obrigatório; aceita um dos valores do enum `Instituicao`.
+`quantidade` é opcional; pode ser `null` ou ausente.
 
 **Response 201:** objeto completo (mesmo formato do `GET /cris/:id`).
 
@@ -234,14 +253,17 @@ Mesmo componente em ambos os modos. Campos:
 |---|---|---|
 | Código | Input texto | obrigatório, 1–50 chars |
 | Emissor | Input texto | obrigatório, 1–200 chars |
+| **Instituição** | Select (enum `Instituicao`) | obrigatório |
 | **Remuneração** | Select único (4 presets) | obrigatório — ver abaixo |
 | Taxa | Input numérico | obrigatório (semântica varia conforme remuneração) |
 | Valor nominal (R$) | Input numérico | obrigatório, > 0 |
-| Quantidade | Input numérico inteiro | obrigatório, > 0 |
+| Quantidade | Input numérico inteiro | **opcional**, > 0 quando preenchido |
 | Preço de aquisição unitário (R$) | Input numérico | obrigatório, > 0 |
-| Data de aquisição | Input date | obrigatório |
-| Data de vencimento | Input date | obrigatório, > data de aquisição |
+| Data de aquisição | DatePicker (calendário + input por teclado) | obrigatório |
+| Data de vencimento | DatePicker (calendário + input por teclado) | obrigatório, > data de aquisição |
 | Observações | Textarea | opcional, ≤ 1000 chars |
+
+**DatePicker** aceita digitação direta nos formatos `dd/mm/yyyy` e `dd-mm-yyyy` (parseados via date-fns) e mantém o calendário acessível via ícone à direita do input.
 
 **Select "Remuneração"** mapeia para `(indexador, tipoTaxa)`:
 
@@ -274,7 +296,9 @@ Centralizadas em schemas Zod em `packages/shared/src/cri.ts`, consumidas por:
 Regras-chave:
 - `codigo` único na base.
 - `dataVencimento > dataAquisicao`.
-- `valorNominal`, `precoAquisicao`, `quantidade` estritamente positivos.
+- `valorNominal`, `precoAquisicao` estritamente positivos.
+- `quantidade` estritamente positiva **quando preenchida** (opcional).
+- `instituicao` obrigatória (enum).
 - `taxa ≥ 0` (limite superior depende do `tipoTaxa`; sem teto rígido, mas avisar no UI se `> 200`).
 - Consistência indexador × tipoTaxa (ver tabela acima).
 
@@ -306,6 +330,9 @@ Script idempotente: se o `codigo` já existir, pula. Roda via `pnpm --filter api
 - [ ] Lista exibe coluna "Remuneração" no formato derivado correto para cada uma das 3 combinações.
 - [ ] Datas em `dd/MM/yyyy`; valores monetários em `R$ 1.234,56`.
 - [ ] CORS permite chamadas de `http://localhost:3000` em dev.
+- [ ] Campo Instituição salva e edita corretamente; API rejeita criação sem instituição (Zod).
+- [ ] Quantidade pode ser deixada em branco no formulário; lista exibe `—` na coluna e em "Investido total" para registros sem quantidade.
+- [ ] DatePicker aceita digitação direta em `dd/mm/yyyy` e `dd-mm-yyyy` e mantém o calendário funcional via ícone.
 
 ## Validação (preencher no smoke test final)
 
