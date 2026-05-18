@@ -1,9 +1,9 @@
 # Feature 002 — Eventos do CRI (registro manual)
 
-**Status:** Active
+**Status:** Closed
 **Aberta em:** 2026-05-17
 **Aprovada em:** 2026-05-17
-**Fechada em:** —
+**Fechada em:** 2026-05-17
 **Modificada por:** —
 
 ## Objetivo
@@ -211,27 +211,52 @@ Hooks TanStack em `apps/web/src/hooks/use-eventos.ts`:
 
 ## Critérios de aceitação
 
-- [ ] Migration cria tabela `eventos`, enum `TipoEvento` e índices.
-- [ ] `GET /cris/:id/eventos` em CRI sem eventos retorna `[]`.
-- [ ] `GET /cris/:id/eventos` retorna eventos em ordem `data DESC`.
-- [ ] `GET /cris/<id-inexistente>/eventos` retorna `404`.
-- [ ] `POST /cris/:id/eventos` com body válido cria e retorna `201`.
-- [ ] `POST /cris/:id/eventos` com `valor <= 0` retorna `400` com issue do Zod.
-- [ ] `POST /cris/:id/eventos` com `data < dataAquisicao` retorna `400` com mensagem do servidor.
-- [ ] `PUT /cris/:id/eventos/:eventoId` atualiza e devolve novo objeto.
-- [ ] `PUT` com `eventoId` que não pertence ao `ativoId` retorna `404`.
-- [ ] `DELETE /cris/:id/eventos/:eventoId` retorna `204` e remove o evento.
-- [ ] Deletar o CRI remove todos os seus eventos (cascade).
-- [ ] Página de detalhe do CRI mostra o card "Eventos" com total agregado.
-- [ ] Modal de criar/editar funciona; erros aparecem inline.
-- [ ] Delete via dropdown abre `AlertDialog` e remove o evento após confirmação.
-- [ ] Total recebido reflete instantaneamente após criar/editar/deletar (TanStack invalida cache).
-- [ ] Datas em `dd/MM/yyyy`; valores em `R$ 1.234,56`.
+- [x] Migration cria tabela `eventos`, enum `TipoEvento` e índices.
+- [x] `GET /cris/:id/eventos` em CRI sem eventos retorna `[]`.
+- [x] `GET /cris/:id/eventos` retorna eventos em ordem `data DESC`.
+- [x] `GET /cris/<id-inexistente>/eventos` retorna `404`.
+- [x] `POST /cris/:id/eventos` com body válido cria e retorna `201`.
+- [x] `POST /cris/:id/eventos` com `valor <= 0` retorna `400` com issue do Zod.
+- [x] `POST /cris/:id/eventos` com `data < dataAquisicao` retorna `400` com mensagem do servidor.
+- [x] `PUT /cris/:id/eventos/:eventoId` atualiza e devolve novo objeto.
+- [x] `PUT` com `eventoId` que não pertence ao `ativoId` retorna `404`.
+- [x] `DELETE /cris/:id/eventos/:eventoId` retorna `204` e remove o evento.
+- [x] Deletar o CRI remove todos os seus eventos (cascade).
+- [x] Página de detalhe do CRI mostra o card "Eventos" com total agregado.
+- [x] Modal de criar/editar funciona; erros aparecem inline.
+- [x] Delete via dropdown abre `AlertDialog` e remove o evento após confirmação.
+- [x] Total recebido reflete instantaneamente após criar/editar/deletar (TanStack invalida cache).
+- [x] Datas em `dd/MM/yyyy`; valores em `R$ 1.234,56`.
 
 ## Validação (preencher no smoke test final)
 
-_(preencher na última sub-etapa)_
+Implementado e exercitado em 2026-05-17:
+
+**Backend (F2.1 + F2.2):**
+- Migration `add_eventos` aplicada (enum `TipoEvento`, tabela `eventos` com FK cascade, índices em `ativoId` e `data`).
+- Schemas Zod compartilhados (`EventoInputSchema`, `EventoResponseSchema`, `TIPO_EVENTO_LABELS`).
+- 4 rotas CRUD aninhadas em `/cris/:id/eventos[/:eventoId]` exercitadas via curl: list/create/update/delete + cenários de erro (CRI inexistente, validação cruzada `data ≥ dataAquisicao`).
+- Validação cruzada server-side retorna formato Zod-compatível, permitindo display inline no form.
+
+**Web (F2.3 + F2.4):**
+- Cliente HTTP extraído para `_client.ts` (reuso entre cris e eventos); módulo `eventos.ts` com 4 funções + `eventoKeys`.
+- Hooks TanStack (`useEventos`, `useCreateEvento`, `useUpdateEvento`, `useDeleteEvento`) com invalidação automática.
+- `EventoForm` (modal Dialog) com Tipo / Data (DatePicker reusado) / Valor / Observações.
+- `CardEventos` integrado no `/cris/[id]` abaixo do card de detalhes, com estado vazio, tabela com total agregado, DropdownMenu por linha e AlertDialog inline pra delete.
+- Fluxo ponta-a-ponta exercitado: criar, listar com total, editar via dropdown, deletar com confirmação contextual.
+
+### Ajustes feitos durante implementação
+
+- **Refactor de `_client.ts`** (não estava no plano original) — `apiFetch` + `ApiError` foram extraídos de `cris.ts` para um módulo compartilhado, viabilizando `eventos.ts` sem duplicação.
+- **Delete inline em vez de `DeleteEventoButton` componente** — o state ("qual evento está sendo deletado") mora no `CardEventos`. Renderizar um único `AlertDialog` controlado é melhor que N AlertDialogs (um por linha) e mantém o componente focado.
 
 ## Pendências geradas
 
-_(preencher conforme aparecerem; ao fechar a spec, mover para `BACKLOG.md` ou abrir spec própria)_
+Nenhuma pendência adicional identificada durante a implementação. Os tópicos previamente listados como "fora de escopo" continuam válidos como features futuras:
+
+- **Projeção/cronograma de eventos futuros** (depende de periodicidade já cadastrada via spec 003).
+- **Reconciliação projetado × recebido** (depende da projeção existir).
+- **Visão consolidada cross-ativo** (`/eventos` listando tudo) — quando o segundo tipo de ativo entrar.
+- **Outros tipos de evento** (bônus, atualização monetária) — adicionar valores ao enum se aparecer demanda.
+- **Cálculo de rentabilidade** (retorno realizado vs nominal).
+- **Importação em lote** (CSV / extrato).

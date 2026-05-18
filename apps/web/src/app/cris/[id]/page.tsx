@@ -13,6 +13,7 @@ import {
 import { useCri } from '@/hooks/use-cris';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardEventos } from '@/components/CardEventos';
 import { DeleteCriButton } from '@/components/DeleteCriButton';
 
 export default function CriDetalhePage({
@@ -142,6 +143,10 @@ export default function CriDetalhePage({
           )}
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <CardEventos criId={cri.id} />
+      </div>
     </main>
   );
 }
