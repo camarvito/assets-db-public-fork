@@ -83,10 +83,7 @@ function toDefaults(initial: CriResponse): Partial<CriInput> {
   };
 }
 
-// Aceita vírgula como separador decimal (UX pt-BR) e normaliza para ponto.
-function normalizeDecimal(v: string): string {
-  return v.replace(',', '.').trim();
-}
+const NONE_SENTINEL = '__none__';
 
 export function CriForm({ mode }: CriFormProps) {
   const router = useRouter();
@@ -108,15 +105,12 @@ export function CriForm({ mode }: CriFormProps) {
   );
 
   async function onSubmit(values: CriInput) {
-    // Normalizar decimais e converter strings vazias em null antes de enviar.
+    // Zod (preprocess) já normalizou todos os monetários e mapeou
+    // valorNominal vazio para null. Aqui resta só converter strings
+    // não-monetárias vazias em null.
     const payload: CriInput = {
       ...values,
       emissor: values.emissor?.trim() ? values.emissor : null,
-      precoAquisicao: normalizeDecimal(values.precoAquisicao),
-      valorNominal: values.valorNominal?.trim()
-        ? normalizeDecimal(values.valorNominal)
-        : null,
-      taxa: normalizeDecimal(values.taxa),
       observacoes: values.observacoes?.trim() ? values.observacoes : null,
     };
 
@@ -370,7 +364,9 @@ export function CriForm({ mode }: CriFormProps) {
                 <FormLabel>Periodicidade de juros (opcional)</FormLabel>
                 <Select
                   value={field.value ?? undefined}
-                  onValueChange={field.onChange}
+                  onValueChange={(v) =>
+                    field.onChange(v === NONE_SENTINEL ? null : v)
+                  }
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -378,6 +374,9 @@ export function CriForm({ mode }: CriFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value={NONE_SENTINEL}>
+                      Limpar seleção
+                    </SelectItem>
                     {PeriodicidadeJurosSchema.options.map((key) => (
                       <SelectItem key={key} value={key}>
                         {PERIODICIDADE_JUROS_LABELS[key]}

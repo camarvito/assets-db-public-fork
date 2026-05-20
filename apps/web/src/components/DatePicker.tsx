@@ -18,7 +18,8 @@ interface DatePickerProps {
   id?: string;
 }
 
-const DISPLAY_FORMATS = ['dd/MM/yyyy', 'dd-MM-yyyy'];
+const DISPLAY_FORMATS_FULL = ['dd/MM/yyyy', 'dd-MM-yyyy'];
+const DISPLAY_FORMATS_SHORT = ['dd/MM/yy', 'dd-MM-yy'];
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2200;
 
@@ -32,15 +33,30 @@ function dateToIso(d: Date): string {
   return format(d, 'yyyy-MM-dd');
 }
 
-// Aceita apenas strings com 10 caracteres (formato completo) e ano dentro de
-// um range razoável. date-fns é permissivo com ano parcial ("2" vira 0002);
-// essa guard evita parses indesejados enquanto o usuário ainda digita.
+// Aceita strings com 10 caracteres (ano completo) ou 8 caracteres (ano de 2
+// dígitos, sempre interpretado como 20yy). A guard de comprimento evita
+// parses indesejados enquanto o usuário ainda digita.
 function tryParseDisplay(input: string): Date | undefined {
-  if (input.length !== 10) return undefined;
-  for (const fmt of DISPLAY_FORMATS) {
+  const formats =
+    input.length === 10
+      ? DISPLAY_FORMATS_FULL
+      : input.length === 8
+        ? DISPLAY_FORMATS_SHORT
+        : null;
+  if (!formats) return undefined;
+  for (const fmt of formats) {
     const parsed = parse(input, fmt, new Date());
     if (!isValid(parsed)) continue;
-    const year = parsed.getFullYear();
+    let year = parsed.getFullYear();
+    // date-fns 3 já interpreta `yy` numa janela próxima do ano atual; aqui
+    // forçamos a regra "sempre 20yy" definida na spec 004 — para input de 8
+    // caracteres, extrai os 2 dígitos do ano e reconstrói com 2000+yy.
+    if (input.length === 8) {
+      const yy = Number.parseInt(input.slice(6, 8), 10);
+      if (Number.isNaN(yy)) continue;
+      year = 2000 + yy;
+      parsed.setFullYear(year);
+    }
     if (year < MIN_YEAR || year > MAX_YEAR) continue;
     return parsed;
   }

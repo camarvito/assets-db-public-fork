@@ -69,10 +69,6 @@ function toDefaults(initial: EventoResponse): Partial<EventoInput> {
   };
 }
 
-function normalizeDecimal(v: string): string {
-  return v.replace(',', '.').trim();
-}
-
 export function EventoForm({ criId, open, onOpenChange, mode }: EventoFormProps) {
   const form = useForm<EventoInput>({
     resolver: zodResolver(EventoInputSchema),
@@ -97,9 +93,9 @@ export function EventoForm({ criId, open, onOpenChange, mode }: EventoFormProps)
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   async function onSubmit(values: EventoInput) {
+    // Zod (preprocess) já normalizou `valor`.
     const payload: EventoInput = {
       ...values,
-      valor: normalizeDecimal(values.valor),
       observacoes: values.observacoes?.trim() ? values.observacoes : null,
     };
 

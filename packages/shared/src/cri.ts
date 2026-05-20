@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   isoDateString,
   nonNegativeDecimalString,
+  optionalPositiveDecimalString,
   positiveDecimalString,
 } from './_validators';
 
@@ -99,7 +100,7 @@ const criInputBase = z.object({
   precoAquisicao: positiveDecimalString,
   dataAquisicao: isoDateString,
   observacoes: z.string().max(1000, 'Máximo 1000 caracteres').nullable().optional(),
-  valorNominal: positiveDecimalString.nullable().optional(),
+  valorNominal: optionalPositiveDecimalString,
   dataVencimento: isoDateString,
   indexador: IndexadorSchema,
   tipoTaxa: TipoTaxaSchema,
