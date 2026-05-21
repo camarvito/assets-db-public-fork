@@ -35,3 +35,6 @@ coverage/
 # Misc
 .cache/
 .turbo/
+
+# DB backups
+.backups/

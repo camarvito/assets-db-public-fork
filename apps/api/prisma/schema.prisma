@@ -1,4 +1,4 @@
-// Modelagem multi-tipo de ativos (CTI). Ver ADR 002.
+// Modelagem multi-tipo de ativos. Ver ADRs 002 (CTI base) e 003 (3 níveis RF).
 
 generator client {
   provider = "prisma-client-js"
@@ -11,6 +11,9 @@ datasource db {
 
 enum TipoAtivo {
   CRI
+  CRA
+  LCI
+  LCA
 }
 
 enum Indexador {
@@ -49,30 +52,47 @@ enum PeriodicidadeJuros {
 }
 
 model Ativo {
-  id             String       @id @default(cuid())
-  tipo           TipoAtivo
-  codigo         String       @unique
-  nome           String
-  emissor        String?
-  instituicao    Instituicao?
-  quantidade     Int?
-  precoAquisicao Decimal      @db.Decimal(18, 4) @map("preco_aquisicao")
-  dataAquisicao  DateTime     @db.Date           @map("data_aquisicao")
-  observacoes    String?      @db.Text
+  id          String      @id @default(cuid())
+  tipo        TipoAtivo
+  codigo      String      @unique
+  nome        String
+  instituicao Instituicao
+  observacoes String?     @db.Text
+
+  precoAquisicao Decimal  @db.Decimal(18, 4) @map("preco_aquisicao")
+  dataAquisicao  DateTime @db.Date           @map("data_aquisicao")
 
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt      @map("atualizado_em")
 
-  cri     Cri?
-  eventos Evento[]
+  rendaFixa AtivoRendaFixa?
+  eventos   Evento[]
 
   @@map("ativos")
 }
 
+model AtivoRendaFixa {
+  ativoId String @id @map("ativo_id")
+  ativo   Ativo  @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+
+  dataVencimento     DateTime            @db.Date @map("data_vencimento")
+  indexador          Indexador
+  tipoTaxa           TipoTaxa            @map("tipo_taxa")
+  taxa               Decimal             @db.Decimal(8, 4)
+  periodicidadeJuros PeriodicidadeJuros? @map("periodicidade_juros")
+
+  cri Cri?
+  cra Cra?
+  lci Lci?
+  lca Lca?
+
+  @@map("ativos_renda_fixa")
+}
+
 model Evento {
-  id      String     @id @default(cuid())
-  ativoId String     @map("ativo_id")
-  ativo   Ativo      @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  ativoId String @map("ativo_id")
+  ativo   Ativo  @relation(fields: [ativoId], references: [id], onDelete: Cascade)
 
   tipo        TipoEvento
   data        DateTime   @db.Date
@@ -88,15 +108,37 @@ model Evento {
 }
 
 model Cri {
-  ativoId String @id @map("ativo_id")
-  ativo   Ativo  @relation(fields: [ativoId], references: [id], onDelete: Cascade)
+  ativoId   String         @id @map("ativo_id")
+  rendaFixa AtivoRendaFixa @relation(fields: [ativoId], references: [ativoId], onDelete: Cascade)
 
-  valorNominal       Decimal?            @db.Decimal(18, 4) @map("valor_nominal")
-  dataVencimento     DateTime            @db.Date            @map("data_vencimento")
-  indexador          Indexador
-  tipoTaxa           TipoTaxa                                @map("tipo_taxa")
-  taxa               Decimal             @db.Decimal(8, 4)
-  periodicidadeJuros PeriodicidadeJuros?                     @map("periodicidade_juros")
+  emissor      String?
+  quantidade   Int?
+  valorNominal Decimal? @db.Decimal(18, 4) @map("valor_nominal")
 
   @@map("cris")
+}
+
+model Cra {
+  ativoId   String         @id @map("ativo_id")
+  rendaFixa AtivoRendaFixa @relation(fields: [ativoId], references: [ativoId], onDelete: Cascade)
+
+  emissor      String?
+  quantidade   Int?
+  valorNominal Decimal? @db.Decimal(18, 4) @map("valor_nominal")
+
+  @@map("cras")
+}
+
+model Lci {
+  ativoId   String         @id @map("ativo_id")
+  rendaFixa AtivoRendaFixa @relation(fields: [ativoId], references: [ativoId], onDelete: Cascade)
+
+  @@map("lcis")
+}
+
+model Lca {
+  ativoId   String         @id @map("ativo_id")
+  rendaFixa AtivoRendaFixa @relation(fields: [ativoId], references: [ativoId], onDelete: Cascade)
+
+  @@map("lcas")
 }

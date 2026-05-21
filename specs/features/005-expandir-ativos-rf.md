@@ -1,8 +1,8 @@
 # Feature 005 — Expandir ativos: CRA, LCI, LCA + listagem unificada
 
-**Status:** Draft
+**Status:** Active
 **Aberta em:** 2026-05-19
-**Aprovada em:** —
+**Aprovada em:** 2026-05-19
 **Fechada em:** —
 **Modificada por:** —
 

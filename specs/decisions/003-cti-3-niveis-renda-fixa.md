@@ -1,6 +1,6 @@
 # ADR 003 — CTI de 3 níveis para a família renda fixa
 
-**Status:** Proposed
+**Status:** Accepted
 **Data:** 2026-05-19
 
 ## Contexto
