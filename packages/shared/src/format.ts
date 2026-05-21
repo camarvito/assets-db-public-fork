@@ -1,4 +1,4 @@
-import type { Indexador, TipoTaxa } from './cri';
+import type { Indexador, TipoTaxa } from './ativo-renda-fixa.js';
 
 // "1234.5" -> "R$ 1.234,50"
 export function formatCurrencyBRL(decimalString: string): string {

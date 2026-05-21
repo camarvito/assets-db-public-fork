@@ -2,7 +2,7 @@
 // Não exportar via barrel (index.ts) — uso restrito a esse pacote.
 
 import { z } from 'zod';
-import { parseMoneyInput } from './parse-money';
+import { parseMoneyInput } from './parse-money.js';
 
 const decimalRegex = /^\d+(\.\d+)?$/;
 
