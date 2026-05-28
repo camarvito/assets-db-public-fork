@@ -1,5 +1,7 @@
 {
   "name": "assets-db",
+  "author": "Victor Camargo",
+  "license": "MIT",
   "private": true,
   "version": "0.0.0",
   "description": "Controle de ativos financeiros com visualização de eventos (pagamentos, bônus, amortizações).",
