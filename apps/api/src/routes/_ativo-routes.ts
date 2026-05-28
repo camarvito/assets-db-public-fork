@@ -16,9 +16,9 @@ function isoToDate(iso: string): Date {
 
 type LeafRelation = 'cri' | 'cra' | 'lci' | 'lca';
 
-// Forma genérica que cobre os 4 tipos:
-// - CRI/CRA têm `emissor`, `quantidade`, `valorNominal` opcionais
-// - LCI/LCA não os têm; o helper de leaf descarta esses campos
+// Generic shape covering all four asset types:
+// - CRI/CRA carry optional `emissor`, `quantidade`, `valorNominal`
+// - LCI/LCA do not; the leaf helper drops those fields
 type AtivoTypeInput = {
   codigo: string;
   nome: string;
@@ -48,7 +48,7 @@ function buildLeafCreate(leaf: LeafRelation, data: AtivoTypeInput) {
       },
     };
   }
-  // LCI/LCA: tabela marcadora, só FK.
+  // LCI/LCA: marker table, only the FK matters.
   return { [leaf]: { create: {} } };
 }
 
@@ -64,7 +64,7 @@ function buildLeafUpdate(leaf: LeafRelation, data: AtivoTypeInput) {
       },
     };
   }
-  // LCI/LCA não têm o que atualizar (a tabela só guarda ativo_id).
+  // LCI/LCA have nothing to update (their table stores only ativo_id).
   return {};
 }
 

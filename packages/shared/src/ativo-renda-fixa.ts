@@ -4,10 +4,6 @@ import {
   nonNegativeDecimalString,
 } from './_validators.js';
 
-// =====================================================
-// Enums da família renda fixa
-// =====================================================
-
 export const IndexadorSchema = z.enum(['PREFIXADO', 'CDI', 'IPCA']);
 export type Indexador = z.infer<typeof IndexadorSchema>;
 
@@ -19,10 +15,6 @@ export const PeriodicidadeJurosSchema = z.enum(
   { errorMap: () => ({ message: 'Selecione uma periodicidade' }) },
 );
 export type PeriodicidadeJuros = z.infer<typeof PeriodicidadeJurosSchema>;
-
-// =====================================================
-// Labels
-// =====================================================
 
 export const INDEXADOR_LABELS: Record<Indexador, string> = {
   PREFIXADO: 'Prefixado',
@@ -43,8 +35,6 @@ export const PERIODICIDADE_JUROS_LABELS: Record<PeriodicidadeJuros, string> = {
   BULLET: 'Bullet (só no vencimento)',
 };
 
-// Presets exibidos no select "Remuneração" do formulário.
-// Cada preset mapeia para uma combinação (indexador, tipoTaxa).
 export const REMUNERACAO_PRESETS = [
   { key: 'PREFIXADO', label: 'Prefixado', indexador: 'PREFIXADO', tipoTaxa: 'PRE', taxaLabel: '% a.a.' },
   { key: 'CDI_PERCENTUAL', label: '% do CDI', indexador: 'CDI', tipoTaxa: 'POS_PERCENTUAL', taxaLabel: '% do CDI' },
@@ -60,12 +50,6 @@ export const REMUNERACAO_PRESETS = [
 
 export type RemuneracaoPresetKey = (typeof REMUNERACAO_PRESETS)[number]['key'];
 
-// =====================================================
-// Schema base: campos comuns à camada de renda fixa.
-// Comporta com AtivoBaseInputSchema para formar a entrada
-// completa de um título (CRI/CRA/LCI/LCA).
-// =====================================================
-
 export const AtivoRendaFixaInputSchema = z.object({
   dataVencimento: isoDateString,
   indexador: IndexadorSchema,
@@ -76,17 +60,10 @@ export const AtivoRendaFixaInputSchema = z.object({
 
 export type AtivoRendaFixaInput = z.infer<typeof AtivoRendaFixaInputSchema>;
 
-// =====================================================
-// Validações cruzadas comuns à família renda fixa.
-// Aplicadas após o merge com AtivoBaseInputSchema, já que
-// uma delas (dataVencimento × dataAquisicao) cruza camadas.
-//
-// Mantemos a constraint do generic apenas em ZodTypeAny
-// para preservar o tipo de saída do schema original
-// (uma constraint estreita força TS a inferir T como o
-// tipo restritivo, perdendo os campos extras).
-// =====================================================
-
+// Applied after merging with AtivoBaseInputSchema because one of the checks
+// (dataVencimento vs. dataAquisicao) spans both layers. The generic is left as
+// `ZodTypeAny` on purpose: a narrower constraint forces TS to infer T as the
+// constraint type, dropping the schema's extra fields.
 type RendaFixaDataShape = {
   dataAquisicao: string;
   dataVencimento: string;

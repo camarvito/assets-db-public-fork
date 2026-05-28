@@ -1,10 +1,7 @@
-// Cliente HTTP compartilhado entre os módulos de recurso (cris, eventos, etc.).
-// Não exportar via barrel — uso interno do pacote api.
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-// Erro lançado para qualquer resposta non-2xx da API. `payload` carrega o
-// corpo da resposta (formato depende do erro: validation, conflict, etc.).
+// Thrown for any non-2xx API response. `payload` carries the response body —
+// its shape depends on the error kind (validation, conflict, etc.).
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -21,8 +18,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
-      // Só envia Content-Type quando há body — Fastify 5 rejeita request
-      // sem body se Content-Type: application/json estiver setado.
+      // Only send Content-Type when there is a body — Fastify 5 rejects
+      // bodyless requests that still set Content-Type: application/json.
       ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
       ...init?.headers,
     },
@@ -33,7 +30,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     try {
       payload = await res.json();
     } catch {
-      // ignore: resposta sem JSON
+      // ignore: response without JSON body
     }
     throw new ApiError(res.status, payload);
   }

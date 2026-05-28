@@ -19,22 +19,20 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2002 = unique constraint violation
       if (error.code === 'P2002') {
         const target = error.meta?.target;
         const field = Array.isArray(target) ? target[0] : undefined;
         reply.status(409).send({ error: 'conflict', field });
         return;
       }
-      // P2025 = record not found (update/delete em id inexistente)
       if (error.code === 'P2025') {
         reply.status(404).send({ error: 'not_found' });
         return;
       }
     }
 
-    // FastifyErrors carregam statusCode próprio (ex: 400 para body vazio,
-    // 404 para rota inexistente). Respeitar antes de cair em 500.
+    // FastifyErrors carry their own statusCode (e.g. 400 for empty body, 404
+    // for unknown route). Honour those before defaulting to 500.
     if (isFastifyError(error) && error.statusCode && error.statusCode < 500) {
       reply.status(error.statusCode).send({
         error: error.code ?? 'bad_request',

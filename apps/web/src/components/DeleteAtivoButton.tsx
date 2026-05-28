@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Trash2 } from 'lucide-react';
+import type { TipoAtivo } from '@assets-db/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,23 +17,24 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useDeleteCri } from '@/hooks/use-cris';
+import { useDeleteAtivo } from '@/hooks/use-ativos';
 
-interface DeleteCriButtonProps {
+interface DeleteAtivoButtonProps {
   id: string;
+  tipo: TipoAtivo;
   codigo: string;
 }
 
-export function DeleteCriButton({ id, codigo }: DeleteCriButtonProps) {
+export function DeleteAtivoButton({ id, tipo, codigo }: DeleteAtivoButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const deleteMutation = useDeleteCri();
+  const deleteMutation = useDeleteAtivo();
 
   async function handleConfirm() {
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success('CRI removido');
-      router.push('/cris');
+      toast.success(`${tipo} removido`);
+      router.push('/ativos');
     } catch (err) {
       toast.error('Erro ao remover', {
         description: err instanceof Error ? err.message : 'Tente novamente.',
@@ -50,10 +52,10 @@ export function DeleteCriButton({ id, codigo }: DeleteCriButtonProps) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Deletar este CRI?</AlertDialogTitle>
+          <AlertDialogTitle>Deletar este {tipo}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação não pode ser desfeita. O CRI <strong>{codigo}</strong> será
-            removido permanentemente da base.
+            Esta ação não pode ser desfeita. O {tipo} <strong>{codigo}</strong> será
+            removido permanentemente da base, junto com todos os seus eventos.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

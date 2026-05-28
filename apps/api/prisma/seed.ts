@@ -2,10 +2,9 @@ import { PrismaClient, type Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Seeds dos 4 tipos de renda fixa cobertos hoje, com periodicidades e
-// indexadores variados pra exercitar os enums. Idempotente via upsert
-// no `codigo` (único em Ativo).
-
+// Seeds covering the four fixed-income types currently supported, with mixed
+// periodicities and indexadores so every enum value is exercised. Idempotent
+// via `codigo` lookup (which is unique on Ativo).
 type AtivoBase = {
   nome: string;
   instituicao: Prisma.AtivoCreateInput['instituicao'];
@@ -152,7 +151,7 @@ const seeds: Seed[] = [
 async function upsertSeed(seed: Seed) {
   const existing = await prisma.ativo.findUnique({ where: { codigo: seed.codigo } });
   if (existing) {
-    console.log(`= ${seed.codigo} (já existe)`);
+    console.log(`= ${seed.codigo} (already exists)`);
     return;
   }
 

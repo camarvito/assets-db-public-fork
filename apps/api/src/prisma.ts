@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 
-// Serializa Prisma.Decimal como string no JSON (evita perda de precisão
-// em valores monetários e taxas). Aplicado uma vez no boot.
+// Serialize Prisma.Decimal as a string in JSON output to preserve precision
+// for monetary values and rates. Applied once at boot.
 Prisma.Decimal.prototype.toJSON = function () {
   return this.toString();
 };

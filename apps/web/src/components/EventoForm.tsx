@@ -11,6 +11,7 @@ import {
   TipoEventoSchema,
   type EventoInput,
   type EventoResponse,
+  type TipoAtivo,
 } from '@assets-db/shared';
 import { useCreateEvento, useUpdateEvento } from '@/hooks/use-eventos';
 import { ApiError } from '@/lib/api/_client';
@@ -47,18 +48,23 @@ type Mode =
   | { kind: 'edit'; eventoId: string; initial: EventoResponse };
 
 interface EventoFormProps {
-  criId: string;
+  ativoId: string;
+  tipoAtivo: TipoAtivo;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: Mode;
 }
 
-const EMPTY_DEFAULTS: Partial<EventoInput> = {
-  tipo: undefined,
-  data: '',
-  valor: '',
-  observacoes: '',
-};
+// For LCI/LCA the event is almost always interest (amortization is rare), so
+// pre-selecting it reduces friction. For CRI/CRA leave the choice explicit.
+function emptyDefaults(tipoAtivo: TipoAtivo): Partial<EventoInput> {
+  return {
+    tipo: tipoAtivo === 'LCI' || tipoAtivo === 'LCA' ? 'JUROS' : undefined,
+    data: '',
+    valor: '',
+    observacoes: '',
+  };
+}
 
 function toDefaults(initial: EventoResponse): Partial<EventoInput> {
   return {
@@ -69,31 +75,35 @@ function toDefaults(initial: EventoResponse): Partial<EventoInput> {
   };
 }
 
-export function EventoForm({ criId, open, onOpenChange, mode }: EventoFormProps) {
+export function EventoForm({
+  ativoId,
+  tipoAtivo,
+  open,
+  onOpenChange,
+  mode,
+}: EventoFormProps) {
   const form = useForm<EventoInput>({
     resolver: zodResolver(EventoInputSchema),
     defaultValues:
-      mode.kind === 'create' ? EMPTY_DEFAULTS : toDefaults(mode.initial),
+      mode.kind === 'create' ? emptyDefaults(tipoAtivo) : toDefaults(mode.initial),
   });
 
-  // Resetar form quando muda de modo ou abre/fecha (ex: editar outro evento).
   useEffect(() => {
     if (open) {
       form.reset(
-        mode.kind === 'create' ? EMPTY_DEFAULTS : toDefaults(mode.initial),
+        mode.kind === 'create' ? emptyDefaults(tipoAtivo) : toDefaults(mode.initial),
       );
     }
-  }, [open, mode, form]);
+  }, [open, mode, form, tipoAtivo]);
 
-  const createMutation = useCreateEvento(criId);
+  const createMutation = useCreateEvento(ativoId);
   const updateMutation = useUpdateEvento(
-    criId,
+    ativoId,
     mode.kind === 'edit' ? mode.eventoId : '',
   );
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   async function onSubmit(values: EventoInput) {
-    // Zod (preprocess) já normalizou `valor`.
     const payload: EventoInput = {
       ...values,
       observacoes: values.observacoes?.trim() ? values.observacoes : null,
@@ -109,8 +119,8 @@ export function EventoForm({ criId, open, onOpenChange, mode }: EventoFormProps)
       }
       onOpenChange(false);
     } catch (err) {
-      // Validação cruzada server-side (data < dataAquisicao) vem como 400
-      // com formato Zod compatível ({ error, issues: [{ path, message }] }).
+      // Server-side cross-field validation (data < dataAquisicao) returns 400
+      // with a Zod-compatible payload: { error, issues: [{ path, message }] }.
       if (err instanceof ApiError && err.status === 400) {
         const payload = err.payload as
           | { issues?: Array<{ path: Array<string | number>; message: string }> }

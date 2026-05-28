@@ -1,5 +1,3 @@
-// Modelagem multi-tipo de ativos. Ver ADRs 002 (CTI base) e 003 (3 níveis RF).
-
 generator client {
   provider = "prisma-client-js"
 }

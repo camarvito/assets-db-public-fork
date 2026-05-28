@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DatePickerProps {
-  // Sempre ISO "YYYY-MM-DD" (ou string vazia).
+  // Always ISO "YYYY-MM-DD" (or empty string).
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -18,10 +18,14 @@ interface DatePickerProps {
   id?: string;
 }
 
-const DISPLAY_FORMATS_FULL = ['dd/MM/yyyy', 'dd-MM-yyyy'];
-const DISPLAY_FORMATS_SHORT = ['dd/MM/yy', 'dd-MM-yy'];
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2200;
+
+// 1–2 digit day/month, 2 or 4 digit year, separator `/` or `-` and the same
+// separator on both sides (the `\2` backref enforces that).
+const RE_WITH_SEP = /^(\d{1,2})([/-])(\d{1,2})\2(\d{2}|\d{4})$/;
+const RE_DIGITS_6 = /^(\d{2})(\d{2})(\d{2})$/;
+const RE_DIGITS_8 = /^(\d{2})(\d{2})(\d{4})$/;
 
 function isoToDate(iso: string): Date | undefined {
   if (!iso) return undefined;
@@ -33,34 +37,39 @@ function dateToIso(d: Date): string {
   return format(d, 'yyyy-MM-dd');
 }
 
-// Aceita strings com 10 caracteres (ano completo) ou 8 caracteres (ano de 2
-// dígitos, sempre interpretado como 20yy). A guard de comprimento evita
-// parses indesejados enquanto o usuário ainda digita.
-function tryParseDisplay(input: string): Date | undefined {
-  const formats =
-    input.length === 10
-      ? DISPLAY_FORMATS_FULL
-      : input.length === 8
-        ? DISPLAY_FORMATS_SHORT
-        : null;
-  if (!formats) return undefined;
-  for (const fmt of formats) {
-    const parsed = parse(input, fmt, new Date());
-    if (!isValid(parsed)) continue;
-    let year = parsed.getFullYear();
-    // date-fns 3 já interpreta `yy` numa janela próxima do ano atual; aqui
-    // forçamos a regra "sempre 20yy" definida na spec 004 — para input de 8
-    // caracteres, extrai os 2 dígitos do ano e reconstrói com 2000+yy.
-    if (input.length === 8) {
-      const yy = Number.parseInt(input.slice(6, 8), 10);
-      if (Number.isNaN(yy)) continue;
-      year = 2000 + yy;
-      parsed.setFullYear(year);
-    }
-    if (year < MIN_YEAR || year > MAX_YEAR) continue;
-    return parsed;
+function extractParts(
+  input: string,
+): { day: string; month: string; year: string } | undefined {
+  const mSep = RE_WITH_SEP.exec(input);
+  if (mSep && mSep[1] && mSep[3] && mSep[4]) {
+    return { day: mSep[1], month: mSep[3], year: mSep[4] };
+  }
+  const m8 = RE_DIGITS_8.exec(input);
+  if (m8 && m8[1] && m8[2] && m8[3]) {
+    return { day: m8[1], month: m8[2], year: m8[3] };
+  }
+  const m6 = RE_DIGITS_6.exec(input);
+  if (m6 && m6[1] && m6[2] && m6[3]) {
+    return { day: m6[1], month: m6[2], year: m6[3] };
   }
   return undefined;
+}
+
+function tryParseDisplay(input: string): Date | undefined {
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+
+  const parts = extractParts(trimmed);
+  if (!parts) return undefined;
+
+  // Two-digit years always expand to 20yy.
+  const yyyy = parts.year.length === 2 ? `20${parts.year}` : parts.year;
+  const yearNum = Number.parseInt(yyyy, 10);
+  if (yearNum < MIN_YEAR || yearNum > MAX_YEAR) return undefined;
+
+  const canonical = `${parts.day.padStart(2, '0')}/${parts.month.padStart(2, '0')}/${yyyy}`;
+  const parsed = parse(canonical, 'dd/MM/yyyy', new Date());
+  return isValid(parsed) ? parsed : undefined;
 }
 
 function displayValue(iso: string): string {
@@ -79,8 +88,8 @@ export function DatePicker({
   const [text, setText] = useState(() => displayValue(value));
   const [focused, setFocused] = useState(false);
 
-  // Sincroniza com `value` externo apenas quando o input NÃO está focado.
-  // Senão sobrescreveria o texto que o usuário está digitando ainda parcial.
+  // Sync with the external `value` only when the input is NOT focused,
+  // otherwise we'd overwrite a partial value the user is still typing.
   useEffect(() => {
     if (!focused) setText(displayValue(value));
   }, [value, focused]);
@@ -100,14 +109,14 @@ export function DatePicker({
     if (parsed) {
       onChange(dateToIso(parsed));
     }
-    // Input parcial sem parse válido → não chama onChange; o `value` no form
-    // permanece como estava. Texto local segue a digitação.
+    // Partial input that doesn't parse cleanly → don't call onChange; the
+    // form `value` stays as-is while the local text follows what's typed.
   }
 
   function handleBlur() {
     setFocused(false);
-    // Ressincroniza com a forma canônica do value. Se o usuário deixou um
-    // parcial inválido, o texto volta para o último value válido (ou vazio).
+    // Resync with the canonical form of `value`. If the user left an invalid
+    // partial behind, the text snaps back to the last valid value (or empty).
     setText(displayValue(value));
   }
 

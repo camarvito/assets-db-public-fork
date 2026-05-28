@@ -5,11 +5,10 @@ import {
   applyRendaFixaCrossValidation,
 } from './ativo-renda-fixa.js';
 
-// LCI não tem extras (não há emissor — a "instituição custodiante" é a
-// emissora — não há quantidade nem valor nominal pertinentes hoje).
-// A tabela `lcis` é marcadora: existe para discriminar tipo e preparar
-// terreno pra campos futuros (carência, prazo de resgate, etc.).
-
+// LCI carries no extra fields today (no `emissor` — the holding institution
+// itself is the issuer — and no quantity/face value). The `lcis` table is a
+// marker: it exists to discriminate the asset type and reserve a place for
+// future fields (lock-up period, redemption term, etc.).
 const lciInputBase = AtivoBaseInputSchema.merge(AtivoRendaFixaInputSchema);
 
 export const LciInputSchema = applyRendaFixaCrossValidation(lciInputBase);

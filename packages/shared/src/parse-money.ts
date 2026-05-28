@@ -1,22 +1,21 @@
-// Normaliza strings monetárias digitadas pelo usuário (pt-BR ou US) para a
-// forma canônica com `.` como separador decimal e sem separador de milhar.
-// Quando o input não casa com nenhum formato suportado, devolve a string
-// (trim) sem alteração — o Zod marca como inválido downstream.
+// Normalize user-typed money strings (pt-BR or US) to the canonical form with
+// `.` as decimal separator and no thousand separators. If the input does not
+// match any supported format, return it trimmed and unchanged — Zod will flag
+// it as invalid downstream.
 //
-// Regras (na ordem):
-//   1. Tem `.` e `,`        → o último separador é o decimal; os outros, milhar.
-//   2. Só `,`               → vírgula é decimal.
-//   3. Só `.`, 2+ pontos    → todos são milhar.
-//   4. Só `.`, 1 ponto, 3   → milhar  (ex: "1.234" → "1234")
-//      dígitos depois
-//   5. Só `.`, 1 ponto,     → decimal  (ex: "1.5" → "1.5", "1.50" → "1.50")
-//      qualquer outra
-//      quantidade depois
-//   6. Sem separador        → inteiro como está.
+// Rules (in order):
+//   1. Has `.` and `,`   → last separator is decimal; the others are thousands.
+//   2. Only `,`          → comma is decimal.
+//   3. Only `.`, 2+ dots → all are thousands.
+//   4. Only `.`, 1 dot,  → thousands  (e.g. "1.234" → "1234")
+//      3 digits after
+//   5. Only `.`, 1 dot,  → decimal    (e.g. "1.5" → "1.5", "1.50" → "1.50")
+//      any other count
+//   6. No separator      → integer as-is.
 //
-// Casos rejeitados (devolvem o input limpo sem mudança):
-//   - Múltiplas vírgulas sem ponto ("1,234,567"): ambíguo no contexto pt-BR.
-//   - Qualquer caractere não-dígito além de `.`, `,`, espaço ou prefixo `R$`.
+// Rejected cases (returned cleaned, unchanged):
+//   - Multiple commas without a dot ("1,234,567"): ambiguous in pt-BR context.
+//   - Any non-digit character besides `.`, `,`, whitespace, or an `R$` prefix.
 
 const ONLY_DIGITS_AND_SEPS = /^[\d.,]+$/;
 

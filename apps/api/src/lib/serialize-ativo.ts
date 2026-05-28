@@ -15,9 +15,9 @@ import type {
   LcaResponse,
 } from '@assets-db/shared';
 
-// Inclusão padrão para qualquer leitura que precise dos 3 níveis
-// (base + RF + leaf específico). Como cada Ativo tem apenas UM leaf
-// populado (discriminado por `tipo`), os outros vêm `null` — ok.
+// Default include for any read that needs all three levels (base + RF +
+// type-specific leaf). Each Ativo populates exactly ONE leaf (discriminated by
+// `tipo`); the other leafs come back as `null` and that's expected.
 export const ativoFullInclude = {
   rendaFixa: {
     include: { cri: true, cra: true, lci: true, lca: true },
@@ -39,12 +39,12 @@ function formatDateISO(d: Date): string {
   return d.toISOString().substring(0, 10);
 }
 
-// Invariante do nosso domínio: todo Ativo de tipo RF (CRI/CRA/LCI/LCA)
-// TEM linha em ativos_renda_fixa. Se vier null, é bug — não tente
-// mascarar com `undefined`.
+// Domain invariant: every fixed-income Ativo (CRI/CRA/LCI/LCA) has a row in
+// `ativos_renda_fixa`. If it comes back null, that's a bug — fail loudly
+// instead of masking it with `undefined`.
 function rfOrThrow(a: AtivoFull): NonNullable<AtivoFull['rendaFixa']> {
   if (!a.rendaFixa) {
-    throw new Error(`Invariante violado: Ativo ${a.id} sem ativos_renda_fixa`);
+    throw new Error(`Invariant violated: Ativo ${a.id} missing ativos_renda_fixa row`);
   }
   return a.rendaFixa;
 }
@@ -72,7 +72,7 @@ function baseFlat(a: AtivoFull) {
 export function serializeCri(a: AtivoFull): CriResponse {
   const rf = rfOrThrow(a);
   if (!rf.cri) {
-    throw new Error(`Invariante violado: Ativo ${a.id} tipo CRI sem linha em cris`);
+    throw new Error(`Invariant violated: Ativo ${a.id} of type CRI missing row in cris`);
   }
   return {
     ...baseFlat(a),
@@ -86,7 +86,7 @@ export function serializeCri(a: AtivoFull): CriResponse {
 export function serializeCra(a: AtivoFull): CraResponse {
   const rf = rfOrThrow(a);
   if (!rf.cra) {
-    throw new Error(`Invariante violado: Ativo ${a.id} tipo CRA sem linha em cras`);
+    throw new Error(`Invariant violated: Ativo ${a.id} of type CRA missing row in cras`);
   }
   return {
     ...baseFlat(a),
@@ -100,7 +100,7 @@ export function serializeCra(a: AtivoFull): CraResponse {
 export function serializeLci(a: AtivoFull): LciResponse {
   const rf = rfOrThrow(a);
   if (!rf.lci) {
-    throw new Error(`Invariante violado: Ativo ${a.id} tipo LCI sem linha em lcis`);
+    throw new Error(`Invariant violated: Ativo ${a.id} of type LCI missing row in lcis`);
   }
   return { ...baseFlat(a), tipo: 'LCI' };
 }
@@ -108,7 +108,7 @@ export function serializeLci(a: AtivoFull): LciResponse {
 export function serializeLca(a: AtivoFull): LcaResponse {
   const rf = rfOrThrow(a);
   if (!rf.lca) {
-    throw new Error(`Invariante violado: Ativo ${a.id} tipo LCA sem linha em lcas`);
+    throw new Error(`Invariant violated: Ativo ${a.id} of type LCA missing row in lcas`);
   }
   return { ...baseFlat(a), tipo: 'LCA' };
 }

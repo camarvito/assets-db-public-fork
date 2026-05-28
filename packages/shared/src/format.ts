@@ -32,12 +32,10 @@ function formatPercent(decimalString: string): string {
   );
 }
 
-// Remuneração formatada para exibição (coluna da tabela, detalhe etc.).
-//
-// PREFIXADO + PRE + "12"    -> "12,00% a.a."
+// PREFIXADO + PRE + "12"       -> "12,00% a.a."
 // CDI + POS_PERCENTUAL + "102" -> "102,00% do CDI"
-// CDI + POS_SPREAD + "1.45"   -> "CDI + 1,45%"
-// IPCA + POS_SPREAD + "6.5"   -> "IPCA + 6,50%"
+// CDI + POS_SPREAD + "1.45"    -> "CDI + 1,45%"
+// IPCA + POS_SPREAD + "6.5"    -> "IPCA + 6,50%"
 export function formatRemuneracao(args: {
   indexador: Indexador;
   tipoTaxa: TipoTaxa;

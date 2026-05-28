@@ -1,17 +1,8 @@
-// Helpers internos de validação Zod reusados pelos schemas de domínio.
-// Não exportar via barrel (index.ts) — uso restrito a esse pacote.
-
 import { z } from 'zod';
 import { parseMoneyInput } from './parse-money.js';
 
 const decimalRegex = /^\d+(\.\d+)?$/;
 
-// Preprocessador padrão de monetários:
-// - Não-string passa direto (Zod lida com o tipo inválido).
-// - String vazia (após trim) vira `undefined` — campo obrigatório falha com
-//   "Required"; campo opcional aceita.
-// - Demais entradas passam por parseMoneyInput (aceita "," e "." conforme
-//   regras da spec 004).
 const moneyPreprocess = (v: unknown) => {
   if (typeof v !== 'string') return v;
   const trimmed = v.trim();
@@ -41,10 +32,9 @@ export const nonNegativeDecimalString = z.preprocess(
   ),
 );
 
-// Variante para campos opcionais: mapeia "" para `null` (em vez de undefined),
-// e o schema interno tem `.nullable()` para aceitar.
-// Use sem `.optional()` em cima — o defaultValues do form costuma ser "",
-// nunca undefined, então .nullable() basta.
+// For optional fields: maps "" to `null` (not undefined) so `.nullable()` on
+// the inner schema accepts it. Do NOT wrap with `.optional()` — form
+// defaultValues are usually "" rather than undefined, so `.nullable()` suffices.
 export const optionalPositiveDecimalString = z.preprocess(
   (v) => {
     if (typeof v !== 'string') return v;

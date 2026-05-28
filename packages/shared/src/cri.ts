@@ -6,10 +6,6 @@ import {
   applyRendaFixaCrossValidation,
 } from './ativo-renda-fixa.js';
 
-// =====================================================
-// Campos extras específicos de CRI
-// =====================================================
-
 export const CriExtrasInputSchema = z.object({
   emissor: z.string().max(200, 'Máximo 200 caracteres').nullable().optional(),
   quantidade: z
@@ -21,20 +17,12 @@ export const CriExtrasInputSchema = z.object({
   valorNominal: optionalPositiveDecimalString,
 });
 
-// =====================================================
-// Input (POST/PUT body)
-// =====================================================
-
 const criInputBase = AtivoBaseInputSchema
   .merge(AtivoRendaFixaInputSchema)
   .merge(CriExtrasInputSchema);
 
 export const CriInputSchema = applyRendaFixaCrossValidation(criInputBase);
 export type CriInput = z.infer<typeof CriInputSchema>;
-
-// =====================================================
-// Response (GET / POST 201 / PUT 200)
-// =====================================================
 
 export const CriResponseSchema = criInputBase.extend({
   id: z.string(),

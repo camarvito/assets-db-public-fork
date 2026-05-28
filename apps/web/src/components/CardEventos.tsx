@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -8,8 +9,10 @@ import {
   formatDateBR,
   TIPO_EVENTO_LABELS,
   type EventoResponse,
+  type TipoAtivo,
 } from '@assets-db/shared';
 import { useDeleteEvento, useEventos } from '@/hooks/use-eventos';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -44,17 +47,69 @@ type FormState =
   | { kind: 'edit'; evento: EventoResponse };
 
 interface CardEventosProps {
-  criId: string;
+  ativoId: string;
+  tipoAtivo: TipoAtivo;
 }
 
-export function CardEventos({ criId }: CardEventosProps) {
-  const { data: eventos, isLoading, isError } = useEventos(criId);
-  const deleteMutation = useDeleteEvento(criId);
+type FiltroEventos = 'todos' | 'juros' | 'amortizacao';
+
+const FILTRO_OPTIONS: ReadonlyArray<{ value: FiltroEventos; label: string }> = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'juros', label: 'Juros' },
+  { value: 'amortizacao', label: 'Amortização' },
+];
+
+function parseFiltro(raw: string | null): FiltroEventos {
+  if (raw === 'juros' || raw === 'amortizacao') return raw;
+  return 'todos';
+}
+
+export function CardEventos({ ativoId, tipoAtivo }: CardEventosProps) {
+  const { data: eventos, isLoading, isError } = useEventos(ativoId);
+  const deleteMutation = useDeleteEvento(ativoId);
 
   const [formState, setFormState] = useState<FormState>({ kind: 'closed' });
   const [deletando, setDeletando] = useState<EventoResponse | null>(null);
 
-  const total = eventos?.reduce(
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const filtro = parseFiltro(searchParams.get('eventos'));
+
+  function setFiltro(next: FiltroEventos) {
+    // 'todos' does not pollute the URL — the param is only set when filtered.
+    const target =
+      next === 'todos' ? pathname : `${pathname}?eventos=${next}`;
+    router.replace(target, { scroll: false });
+  }
+
+  // Shortcut Shift+N: opens the new-event modal. Ignored when focus is in an
+  // input/textarea/contenteditable, or when another dialog is already open.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'N' || !e.shiftKey) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const active = document.activeElement as HTMLElement | null;
+      const tag = active?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (active?.isContentEditable) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]'))
+        return;
+      e.preventDefault();
+      setFormState({ kind: 'create' });
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const eventosFiltrados = useMemo(() => {
+    if (!eventos) return eventos;
+    if (filtro === 'todos') return eventos;
+    const alvo = filtro === 'juros' ? 'JUROS' : 'AMORTIZACAO';
+    return eventos.filter((e) => e.tipo === alvo);
+  }, [eventos, filtro]);
+
+  const total = eventosFiltrados?.reduce(
     (sum, ev) => sum + Number.parseFloat(ev.valor),
     0,
   );
@@ -78,22 +133,53 @@ export function CardEventos({ criId }: CardEventosProps) {
         <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
           <div className="flex items-baseline gap-4">
             <CardTitle>Eventos</CardTitle>
-            {eventos && eventos.length > 0 && total != null && (
+            {eventosFiltrados && eventosFiltrados.length > 0 && total != null && (
               <span className="text-sm text-muted-foreground">
-                Total:{' '}
+                Total{filtro !== 'todos' ? ' (filtrado)' : ''}:{' '}
                 <strong className="text-foreground">
                   {formatCurrencyBRL(total.toString())}
                 </strong>
               </span>
             )}
           </div>
-          <Button size="sm" onClick={() => setFormState({ kind: 'create' })}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo evento
-          </Button>
+          <div className="flex items-center gap-2">
+            <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block">
+              Shift + N
+            </kbd>
+            <Button size="sm" onClick={() => setFormState({ kind: 'create' })}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo evento
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent>
+          {eventos && eventos.length > 0 && (
+            <div
+              className="mb-4 inline-flex rounded-md border bg-muted p-0.5"
+              role="tablist"
+              aria-label="Filtrar eventos por tipo"
+            >
+              {FILTRO_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={filtro === opt.value}
+                  onClick={() => setFiltro(opt.value)}
+                  className={cn(
+                    'rounded px-3 py-1 text-sm transition-colors',
+                    filtro === opt.value
+                      ? 'bg-background font-medium text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -112,7 +198,18 @@ export function CardEventos({ criId }: CardEventosProps) {
             </p>
           )}
 
-          {eventos && eventos.length > 0 && (
+          {eventos &&
+            eventos.length > 0 &&
+            eventosFiltrados &&
+            eventosFiltrados.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Nenhum evento de{' '}
+                <strong>{filtro === 'juros' ? 'juros' : 'amortização'}</strong>{' '}
+                registrado.
+              </p>
+            )}
+
+          {eventosFiltrados && eventosFiltrados.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -124,7 +221,7 @@ export function CardEventos({ criId }: CardEventosProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {eventos.map((ev) => (
+                {eventosFiltrados.map((ev) => (
                   <TableRow key={ev.id}>
                     <TableCell>{formatDateBR(ev.data)}</TableCell>
                     <TableCell>{TIPO_EVENTO_LABELS[ev.tipo]}</TableCell>
@@ -174,7 +271,8 @@ export function CardEventos({ criId }: CardEventosProps) {
 
       {formState.kind !== 'closed' && (
         <EventoForm
-          criId={criId}
+          ativoId={ativoId}
+          tipoAtivo={tipoAtivo}
           open
           onOpenChange={(open) => {
             if (!open) setFormState({ kind: 'closed' });

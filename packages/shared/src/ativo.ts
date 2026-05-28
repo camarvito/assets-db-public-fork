@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import { isoDateString, positiveDecimalString } from './_validators.js';
 
-// =====================================================
-// Enums universais a qualquer ativo
-// =====================================================
-
 export const TipoAtivoSchema = z.enum(['CRI', 'CRA', 'LCI', 'LCA']);
 export type TipoAtivo = z.infer<typeof TipoAtivoSchema>;
 
@@ -13,10 +9,6 @@ export const InstituicaoSchema = z.enum(
   { errorMap: () => ({ message: 'Selecione uma instituição' }) },
 );
 export type Instituicao = z.infer<typeof InstituicaoSchema>;
-
-// =====================================================
-// Labels para UI
-// =====================================================
 
 export const TIPO_ATIVO_LABELS: Record<TipoAtivo, string> = {
   CRI: 'CRI',
@@ -35,12 +27,6 @@ export const INSTITUICAO_LABELS: Record<Instituicao, string> = {
   BMG: 'BMG',
   VEST: 'Vest',
 };
-
-// =====================================================
-// Schema base: campos comuns a TODO ativo, independente
-// do tipo ou da família (RF/RV). Usado como bloco de
-// composição em CriInputSchema, CraInputSchema, etc.
-// =====================================================
 
 export const AtivoBaseInputSchema = z.object({
   codigo: z.string().min(1, 'Obrigatório').max(50, 'Máximo 50 caracteres'),

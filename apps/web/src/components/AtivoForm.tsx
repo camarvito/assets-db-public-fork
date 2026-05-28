@@ -1,22 +1,32 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import {
+  CraInputSchema,
   CriInputSchema,
   INSTITUICAO_LABELS,
   InstituicaoSchema,
+  LcaInputSchema,
+  LciInputSchema,
   PERIODICIDADE_JUROS_LABELS,
   PeriodicidadeJurosSchema,
   REMUNERACAO_PRESETS,
   type CriInput,
-  type CriResponse,
+  type TipoAtivo,
 } from '@assets-db/shared';
-import { useCreateCri, useUpdateCri } from '@/hooks/use-cris';
-import { ApiError } from '@/lib/api/cris';
+import {
+  useCreateAtivo,
+  useUpdateAtivo,
+} from '@/hooks/use-ativos';
+import {
+  ApiError,
+  type AtivoInputByTipo,
+  type AtivoResponseByTipo,
+} from '@/lib/api/ativos';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -37,24 +47,56 @@ import {
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/DatePicker';
 
-type Mode = { kind: 'create' } | { kind: 'edit'; id: string; initial: CriResponse };
+// The form operates on the superset (CriInput) — all four asset types share
+// every visible field except `emissor` / `quantidade` / `valorNominal`, which
+// are hidden for LCI/LCA. On submit, those fields are dropped when the type
+// doesn't support them.
+type FormValues = CriInput;
 
-interface CriFormProps {
-  mode: Mode;
+type Mode<T extends TipoAtivo> =
+  | { kind: 'create' }
+  | { kind: 'edit'; id: string; initial: AtivoResponseByTipo[T] };
+
+interface AtivoFormProps<T extends TipoAtivo> {
+  tipo: T;
+  mode: Mode<T>;
 }
 
-// Defaults para o formulário em modo create.
-// `instituicao` deixada undefined para que o Select mostre placeholder e force
-// escolha consciente (Zod marca como obrigatório).
-const EMPTY_DEFAULTS: Partial<CriInput> = {
+const SCHEMA_BY_TIPO = {
+  CRI: CriInputSchema,
+  CRA: CraInputSchema,
+  LCI: LciInputSchema,
+  LCA: LcaInputSchema,
+} as const;
+
+const PATH_PLURAL: Record<TipoAtivo, string> = {
+  CRI: 'cris',
+  CRA: 'cras',
+  LCI: 'lcis',
+  LCA: 'lcas',
+};
+
+const TIPO_DESCRICAO: Record<TipoAtivo, string> = {
+  CRI: 'Certificado de Recebíveis Imobiliários',
+  CRA: 'Certificado de Recebíveis do Agronegócio',
+  LCI: 'Letra de Crédito Imobiliário',
+  LCA: 'Letra de Crédito do Agronegócio',
+};
+
+export const TIPO_NOME_LONGO = TIPO_DESCRICAO;
+
+const NONE_SENTINEL = '__none__';
+
+function hasExtras(tipo: TipoAtivo): boolean {
+  return tipo === 'CRI' || tipo === 'CRA';
+}
+
+const EMPTY_DEFAULTS_BASE: Partial<FormValues> = {
   codigo: '',
   nome: '',
-  emissor: '',
-  quantidade: 1,
   precoAquisicao: '',
   dataAquisicao: '',
   observacoes: '',
-  valorNominal: '',
   dataVencimento: '',
   indexador: 'PREFIXADO',
   tipoTaxa: 'PRE',
@@ -62,67 +104,112 @@ const EMPTY_DEFAULTS: Partial<CriInput> = {
   periodicidadeJuros: undefined,
 };
 
-// Para registros legados sem `instituicao`, deixa undefined — o Select fica
-// vazio e o usuário precisa escolher antes de salvar.
-function toDefaults(initial: CriResponse): Partial<CriInput> {
-  return {
-    codigo: initial.codigo,
-    nome: initial.nome,
-    emissor: initial.emissor ?? '',
-    instituicao: initial.instituicao ?? undefined,
-    quantidade: initial.quantidade,
-    precoAquisicao: initial.precoAquisicao,
-    dataAquisicao: initial.dataAquisicao,
-    observacoes: initial.observacoes ?? '',
-    valorNominal: initial.valorNominal ?? '',
-    dataVencimento: initial.dataVencimento,
-    indexador: initial.indexador,
-    tipoTaxa: initial.tipoTaxa,
-    taxa: initial.taxa,
-    periodicidadeJuros: initial.periodicidadeJuros ?? undefined,
-  };
+function emptyDefaults(tipo: TipoAtivo): Partial<FormValues> {
+  if (hasExtras(tipo)) {
+    return {
+      ...EMPTY_DEFAULTS_BASE,
+      emissor: '',
+      quantidade: 1,
+      valorNominal: '',
+    };
+  }
+  return EMPTY_DEFAULTS_BASE;
 }
 
-const NONE_SENTINEL = '__none__';
+function initialDefaults<T extends TipoAtivo>(
+  tipo: T,
+  initial: AtivoResponseByTipo[T],
+): Partial<FormValues> {
+  // `initial` is typed by `tipo`: CRI/CRA carry emissor/etc., LCI/LCA do not.
+  // Pragmatic cast — we only read fields that actually exist for each type.
+  const i = initial as AtivoResponseByTipo['CRI'];
+  const base: Partial<FormValues> = {
+    codigo: i.codigo,
+    nome: i.nome,
+    instituicao: i.instituicao,
+    precoAquisicao: i.precoAquisicao,
+    dataAquisicao: i.dataAquisicao,
+    observacoes: i.observacoes ?? '',
+    dataVencimento: i.dataVencimento,
+    indexador: i.indexador,
+    tipoTaxa: i.tipoTaxa,
+    taxa: i.taxa,
+    periodicidadeJuros: i.periodicidadeJuros ?? undefined,
+  };
+  if (hasExtras(tipo)) {
+    return {
+      ...base,
+      emissor: i.emissor ?? '',
+      quantidade: i.quantidade ?? null,
+      valorNominal: i.valorNominal ?? '',
+    };
+  }
+  return base;
+}
 
-export function CriForm({ mode }: CriFormProps) {
+export function AtivoForm<T extends TipoAtivo>({
+  tipo,
+  mode,
+}: AtivoFormProps<T>) {
   const router = useRouter();
+  const showExtras = hasExtras(tipo);
 
-  const form = useForm<CriInput>({
-    resolver: zodResolver(CriInputSchema),
-    defaultValues: mode.kind === 'create' ? EMPTY_DEFAULTS : toDefaults(mode.initial),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(SCHEMA_BY_TIPO[tipo]) as Resolver<FormValues>,
+    defaultValues:
+      mode.kind === 'create' ? emptyDefaults(tipo) : initialDefaults(tipo, mode.initial),
   });
 
-  const createMutation = useCreateCri();
-  const updateMutation = useUpdateCri(mode.kind === 'edit' ? mode.id : '');
+  const createMutation = useCreateAtivo(tipo);
+  const updateMutation = useUpdateAtivo(
+    tipo,
+    mode.kind === 'edit' ? mode.id : '',
+  );
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
-  // Preset atual (deriva da combinação indexador + tipoTaxa).
   const indexador = form.watch('indexador');
   const tipoTaxa = form.watch('tipoTaxa');
   const currentPreset = REMUNERACAO_PRESETS.find(
     (p) => p.indexador === indexador && p.tipoTaxa === tipoTaxa,
   );
 
-  async function onSubmit(values: CriInput) {
-    // Zod (preprocess) já normalizou todos os monetários e mapeou
-    // valorNominal vazio para null. Aqui resta só converter strings
-    // não-monetárias vazias em null.
-    const payload: CriInput = {
-      ...values,
-      emissor: values.emissor?.trim() ? values.emissor : null,
+  async function onSubmit(values: FormValues) {
+    // For LCI/LCA drop the extra fields before sending (the API rejects them
+    // per the per-type schema). For CRI/CRA normalize empty strings to null.
+    const baseData = {
+      codigo: values.codigo,
+      nome: values.nome,
+      instituicao: values.instituicao,
       observacoes: values.observacoes?.trim() ? values.observacoes : null,
+      precoAquisicao: values.precoAquisicao,
+      dataAquisicao: values.dataAquisicao,
+      dataVencimento: values.dataVencimento,
+      indexador: values.indexador,
+      tipoTaxa: values.tipoTaxa,
+      taxa: values.taxa,
+      periodicidadeJuros: values.periodicidadeJuros ?? null,
     };
+
+    const data = (
+      showExtras
+        ? {
+            ...baseData,
+            emissor: values.emissor?.trim() ? values.emissor : null,
+            quantidade: values.quantidade ?? null,
+            valorNominal: values.valorNominal,
+          }
+        : baseData
+    ) as AtivoInputByTipo[T];
 
     try {
       if (mode.kind === 'create') {
-        const created = await createMutation.mutateAsync(payload);
-        toast.success('CRI cadastrado');
-        router.push(`/cris/${created.id}`);
+        const created = await createMutation.mutateAsync(data);
+        toast.success(`${tipo} cadastrado`);
+        router.push(`/${PATH_PLURAL[tipo]}/${created.id}`);
       } else {
-        const updated = await updateMutation.mutateAsync(payload);
-        toast.success('CRI atualizado');
-        router.push(`/cris/${updated.id}`);
+        const updated = await updateMutation.mutateAsync(data);
+        toast.success(`${tipo} atualizado`);
+        router.push(`/${PATH_PLURAL[tipo]}/${updated.id}`);
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -138,7 +225,10 @@ export function CriForm({ mode }: CriFormProps) {
     }
   }
 
-  const cancelHref = mode.kind === 'create' ? '/cris' : `/cris/${mode.id}`;
+  const cancelHref =
+    mode.kind === 'create'
+      ? '/ativos'
+      : `/${PATH_PLURAL[tipo]}/${mode.id}`;
 
   return (
     <Form {...form}>
@@ -151,7 +241,7 @@ export function CriForm({ mode }: CriFormProps) {
               <FormItem>
                 <FormLabel>Nome</FormLabel>
                 <FormControl>
-                  <Input placeholder="CRI MRV" {...field} />
+                  <Input placeholder={`${tipo} exemplo`} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -165,30 +255,32 @@ export function CriForm({ mode }: CriFormProps) {
               <FormItem>
                 <FormLabel>Código</FormLabel>
                 <FormControl>
-                  <Input placeholder="CRI23A001" {...field} />
+                  <Input placeholder={`${tipo}23A001`} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="emissor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Emissor (opcional)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Securitizadora Alpha SA"
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {showExtras && (
+            <FormField
+              control={form.control}
+              name="emissor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Emissor (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Securitizadora Alpha SA"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
@@ -267,63 +359,69 @@ export function CriForm({ mode }: CriFormProps) {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="valorNominal"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor nominal (R$) (opcional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="1000,00"
-                    {...field}
-                    value={field.value ?? ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {showExtras && (
+            <FormField
+              control={form.control}
+              name="valorNominal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor nominal (R$) (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="1000,00"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-          <FormField
-            control={form.control}
-            name="quantidade"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantidade (opcional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={field.value ?? ''}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      field.onChange(raw === '' ? null : Number.parseInt(raw, 10));
-                    }}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {showExtras && (
+            <FormField
+              control={form.control}
+              name="quantidade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantidade (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        field.onChange(raw === '' ? null : Number.parseInt(raw, 10));
+                      }}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
             name="precoAquisicao"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Preço de aquisição unitário (R$)</FormLabel>
+                <FormLabel>
+                  {showExtras ? 'Preço de aquisição unitário (R$)' : 'Valor aplicado (R$)'}
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="text"
                     inputMode="decimal"
-                    placeholder="990,00"
+                    placeholder={showExtras ? '990,00' : '5000,00'}
                     {...field}
                   />
                 </FormControl>

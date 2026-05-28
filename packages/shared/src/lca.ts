@@ -5,9 +5,6 @@ import {
   applyRendaFixaCrossValidation,
 } from './ativo-renda-fixa.js';
 
-// Estrutura idêntica à de LCI (ver `lci.ts`). Mantida em arquivo próprio
-// porque os tipos inferidos são distintos e cada um casa com sua rota REST.
-
 const lcaInputBase = AtivoBaseInputSchema.merge(AtivoRendaFixaInputSchema);
 
 export const LcaInputSchema = applyRendaFixaCrossValidation(lcaInputBase);

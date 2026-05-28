@@ -6,9 +6,6 @@ import {
   applyRendaFixaCrossValidation,
 } from './ativo-renda-fixa.js';
 
-// Estrutura idêntica à de CRI (ver `cri.ts`). Mantida em arquivo próprio
-// porque os tipos inferidos são distintos e cada um casa com sua rota REST.
-
 export const CraExtrasInputSchema = z.object({
   emissor: z.string().max(200, 'Máximo 200 caracteres').nullable().optional(),
   quantidade: z

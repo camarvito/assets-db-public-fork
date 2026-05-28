@@ -16,7 +16,6 @@ function isoToDate(iso: string): Date {
 }
 
 export const ativoRoutes: FastifyPluginAsync = async (app) => {
-  // GET /ativos — listagem unificada com filtros opcionais
   app.get('/', async (request) => {
     const query = AtivoListQuerySchema.parse(request.query);
 
@@ -41,7 +40,6 @@ export const ativoRoutes: FastifyPluginAsync = async (app) => {
     return ativos.map((a) => serializeAtivoListItem(a as AtivoFull));
   });
 
-  // GET /ativos/:id — detalhe completo (campos específicos do tipo)
   app.get('/:id', async (request, reply) => {
     const { id } = paramsSchema.parse(request.params);
 
@@ -56,8 +54,8 @@ export const ativoRoutes: FastifyPluginAsync = async (app) => {
     return serializeAtivo(ativo as AtivoFull);
   });
 
-  // DELETE /ativos/:id — apaga sem precisar saber o tipo (cascade
-  // limpa renda_fixa, leaf, eventos via FK).
+  // Deletes without needing to know the asset type — cascading FKs clean up
+  // renda_fixa, the type-specific leaf, and eventos.
   app.delete('/:id', async (request, reply) => {
     const { id } = paramsSchema.parse(request.params);
 

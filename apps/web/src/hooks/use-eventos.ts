@@ -10,40 +10,40 @@ import {
   updateEvento,
 } from '@/lib/api/eventos';
 
-export function useEventos(criId: string) {
+export function useEventos(ativoId: string) {
   return useQuery({
-    queryKey: eventoKeys.byCri(criId),
-    queryFn: () => listEventos(criId),
-    enabled: Boolean(criId),
+    queryKey: eventoKeys.byAtivo(ativoId),
+    queryFn: () => listEventos(ativoId),
+    enabled: Boolean(ativoId),
   });
 }
 
-export function useCreateEvento(criId: string) {
+export function useCreateEvento(ativoId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: EventoInput) => createEvento(criId, data),
+    mutationFn: (data: EventoInput) => createEvento(ativoId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: eventoKeys.byCri(criId) });
+      qc.invalidateQueries({ queryKey: eventoKeys.byAtivo(ativoId) });
     },
   });
 }
 
-export function useUpdateEvento(criId: string, eventoId: string) {
+export function useUpdateEvento(ativoId: string, eventoId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: EventoInput) => updateEvento(criId, eventoId, data),
+    mutationFn: (data: EventoInput) => updateEvento(ativoId, eventoId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: eventoKeys.byCri(criId) });
+      qc.invalidateQueries({ queryKey: eventoKeys.byAtivo(ativoId) });
     },
   });
 }
 
-export function useDeleteEvento(criId: string) {
+export function useDeleteEvento(ativoId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (eventoId: string) => deleteEvento(criId, eventoId),
+    mutationFn: (eventoId: string) => deleteEvento(ativoId, eventoId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: eventoKeys.byCri(criId) });
+      qc.invalidateQueries({ queryKey: eventoKeys.byAtivo(ativoId) });
     },
   });
 }

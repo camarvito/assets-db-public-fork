@@ -1,56 +1,69 @@
 # assets-db
 
-Controle pessoal de ativos financeiros (CRIs, LCIs, LCAs, CRAs, FIIs, ações, etc.) com foco em visualizar os eventos de cada ativo: pagamentos de juros, amortizações, bônus, etc.
+Personal tracker for Brazilian fixed-income assets (CRI, LCI, LCA, CRA, and — eventually — FII, stocks, etc.) with a focus on visualizing the **events** of each asset: interest payments, amortizations, bonuses, and so on.
 
-Estado atual: **bootstrap** — só infraestrutura. Nenhuma feature implementada ainda. Próxima feature: cadastro de CRI (`specs/features/001-cadastro-de-cri.md`, ainda a escrever).
+> Domain terms (asset types, fields, routes) are kept in Portuguese because they map to specific Brazilian financial instruments with no clean English equivalent (e.g. CRI = *Certificado de Recebíveis Imobiliários*). Code identifiers and UI strings follow the same convention.
 
 ## Stack
 
-- Monorepo pnpm: `apps/web`, `apps/api`, `packages/shared`
+- pnpm monorepo: `apps/web`, `apps/api`, `packages/shared`
 - **API:** Node.js + Fastify + Prisma + Zod
 - **Web:** Next.js (App Router) + Tailwind + shadcn/ui
-- **Banco:** PostgreSQL 16 via `docker-compose`
-- **Linguagem:** TypeScript em modo strict
+- **Database:** PostgreSQL 16 via `docker-compose`
+- **Language:** TypeScript, strict mode everywhere
 
-Decisões e contexto em [`specs/decisions/001-stack-inicial.md`](specs/decisions/001-stack-inicial.md).
+## Prerequisites
 
-## Pré-requisitos
-
-- Node.js >= 22 (ver `.nvmrc`)
+- Node.js >= 22 (see `.nvmrc`)
 - pnpm >= 9 (`corepack enable && corepack prepare pnpm@latest --activate`)
 - Docker + Docker Compose
 
-## Como rodar (estado atual)
+## Getting started
 
 ```bash
-# Subir o Postgres local
+# Install dependencies
+pnpm install
+
+# Bring up local Postgres
 pnpm db:up
 
-# Logs do Postgres
+# Tail Postgres logs
 pnpm db:logs
 
-# Abrir psql no container
+# Open psql inside the container
 pnpm db:psql
 
-# Derrubar o Postgres
+# Stop Postgres
 pnpm db:down
 ```
 
-A connection string padrão é `postgresql://assets:assets@localhost:5432/assets_db`. Copie `.env.example` para `.env` na raiz (ou em `apps/api/` quando ele existir).
+The default connection string is `postgresql://assets:assets@localhost:5432/assets_db`. Copy `.env.example` to `.env` at the repo root (or inside `apps/api/`).
 
-> Ainda não há `apps/api` ou `apps/web` instaláveis — serão criados nas próximas etapas do roadmap.
+## Project layout
 
-## Documentação
+```
+.
+├── apps/
+│   ├── api/         # Fastify + Prisma
+│   └── web/         # Next.js
+├── packages/
+│   └── shared/      # Zod schemas and shared domain types
+├── docker-compose.yml
+├── pnpm-workspace.yaml
+└── tsconfig.base.json
+```
 
-- [CLAUDE.md](CLAUDE.md) — convenções do projeto e processo spec-driven
-- [BACKLOG.md](BACKLOG.md) — pendências pequenas sem spec
-- [specs/features/](specs/features/) — specs de features (uma por feature)
-- [specs/decisions/](specs/decisions/) — ADRs (decisões arquiteturais)
+## Conventions
 
-## Roadmap próximo
+- TypeScript `strict: true` and `noUncheckedIndexedAccess: true` everywhere.
+- Validate inputs at every boundary (HTTP, env, files) with Zod.
+- Domain schemas and types live in `packages/shared` and are consumed by both web and api.
+- Tests are not mandatory, but any non-trivial calculation or business rule should be covered with Vitest.
 
-1. **Etapa 1:** Escrever `specs/features/001-cadastro-de-cri.md`
-2. **Etapa 2:** Implementar API de CRI (`apps/api`)
-3. **Etapa 3:** Schemas compartilhados (`packages/shared`)
-4. **Etapa 4:** Web do CRI (`apps/web`)
-5. **Etapa 5:** Smoke test manual + ajustes
+## Contributing
+
+Issues and pull requests are welcome. There is no enforced commit message convention — keep messages clear and in English for new contributions.
+
+## License
+
+MIT

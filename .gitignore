@@ -25,6 +25,12 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# AI assistants (local config)
+.claude/
+.cursor/
+.aider*
+.continue/
+
 # Test / coverage
 coverage/
 .nyc_output/

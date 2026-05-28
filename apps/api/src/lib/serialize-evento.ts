@@ -1,8 +1,8 @@
 import type { Evento } from '@prisma/client';
 import type { EventoResponse } from '@assets-db/shared';
 
-// O campo \`@db.Date\` no Prisma retorna Date com hora 00:00 UTC;
-// substring do ISO basta para extrair "YYYY-MM-DD".
+// Prisma's `@db.Date` columns come back as Date at 00:00 UTC; a substring of
+// the ISO string is enough to extract "YYYY-MM-DD".
 function formatDateISO(d: Date): string {
   return d.toISOString().substring(0, 10);
 }

@@ -14,7 +14,6 @@ function isoToDate(iso: string): Date {
   return new Date(iso + 'T00:00:00Z');
 }
 
-// Carrega data de aquisição do ativo (qualquer tipo). null se id não existe.
 async function loadAtivoDataAquisicao(id: string): Promise<Date | null> {
   const ativo = await prisma.ativo.findUnique({
     where: { id },
